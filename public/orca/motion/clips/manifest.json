@@ -1,0 +1,127 @@
+{
+  "schema": "bsw-behavior-clips/v1",
+  "driver": {
+    "url": "/orca/motion/orca_srkw_oo14_driver.json",
+    "species": "orca",
+    "ecotype": "SRKW",
+    "deployment": "oo14_264m",
+    "license": "CC-BY-4.0",
+    "dataset_doi": "10.5281/zenodo.13308835",
+    "simulated": false
+  },
+  "honesty_note": "Motion is measured SRKW DTAG telemetry. Behavior labels are a modeled kinematic match to the humpback ethogram (R04); the cross-species label is disclosed, never presented as measured orca behavior. Acoustic presence picks WHICH clip spawns; it never drives the trajectory.",
+  "representativeness": "Kinematics are representative SRKW DTAG motion, not the recorded animal.",
+  "fallback": {
+    "id": "continuous",
+    "driverUrl": "/orca/motion/orca_srkw_oo14_driver.json",
+    "t0_s": 0.0,
+    "t1_s": 8187.2,
+    "behaviorClass": null,
+    "behaviorName": "unclassified",
+    "loop": true,
+    "honesty": "measured",
+    "selection": "continuous_fallback"
+  },
+  "clips": [
+    {
+      "id": "Traveling",
+      "driverUrl": "/orca/motion/orca_srkw_oo14_driver.json",
+      "t0_s": 2790.0,
+      "t1_s": 2834.8,
+      "behaviorClass": 8,
+      "behaviorName": "Traveling",
+      "loop": true,
+      "honesty": "measured_motion_modeled_label",
+      "selection": "srkw_kinematic_match",
+      "measured": {
+        "depth_mean_m": 1.74,
+        "depth_range_m": 3.88,
+        "roll_abs_p90_deg": 28.7,
+        "yaw_steadiness": 0.99,
+        "fluke_amp_mean": 0.203,
+        "pitch_std_rad": 0.233,
+        "pitch_zero_crossings": 11
+      }
+    },
+    {
+      "id": "Side_rolls",
+      "driverUrl": "/orca/motion/orca_srkw_oo14_driver.json",
+      "t0_s": 2565.0,
+      "t1_s": 2609.8,
+      "behaviorClass": 5,
+      "behaviorName": "Side_rolls",
+      "loop": true,
+      "honesty": "measured_motion_modeled_label",
+      "selection": "srkw_kinematic_match",
+      "measured": {
+        "depth_mean_m": 20.52,
+        "depth_range_m": 31.45,
+        "roll_abs_p90_deg": 178.9,
+        "yaw_steadiness": 0.909,
+        "fluke_amp_mean": 0.213,
+        "pitch_std_rad": 0.108,
+        "pitch_zero_crossings": 15
+      }
+    },
+    {
+      "id": "Exploratory_dives",
+      "driverUrl": "/orca/motion/orca_srkw_oo14_driver.json",
+      "t0_s": 2115.0,
+      "t1_s": 2159.8,
+      "behaviorClass": 1,
+      "behaviorName": "Exploratory_dives",
+      "loop": true,
+      "honesty": "measured_motion_modeled_label",
+      "selection": "srkw_kinematic_match",
+      "measured": {
+        "depth_mean_m": 79.34,
+        "depth_range_m": 114.23,
+        "roll_abs_p90_deg": 106.7,
+        "yaw_steadiness": 0.776,
+        "fluke_amp_mean": 0.289,
+        "pitch_std_rad": 0.171,
+        "pitch_zero_crossings": 36
+      }
+    },
+    {
+      "id": "Surface_Active",
+      "driverUrl": "/orca/motion/orca_srkw_oo14_driver.json",
+      "t0_s": 3075.0,
+      "t1_s": 3119.8,
+      "behaviorClass": 7,
+      "behaviorName": "Surface_Active",
+      "loop": true,
+      "honesty": "measured_motion_modeled_label",
+      "selection": "srkw_kinematic_match",
+      "measured": {
+        "depth_mean_m": -0.16,
+        "depth_range_m": 0.82,
+        "roll_abs_p90_deg": 119.0,
+        "yaw_steadiness": 0.686,
+        "fluke_amp_mean": 0.74,
+        "pitch_std_rad": 0.591,
+        "pitch_zero_crossings": 11
+      }
+    },
+    {
+      "id": "Vertical_loop",
+      "driverUrl": "/orca/motion/orca_srkw_oo14_driver.json",
+      "t0_s": 2040.0,
+      "t1_s": 2084.8,
+      "behaviorClass": 9,
+      "behaviorName": "Vertical_loop",
+      "loop": true,
+      "honesty": "measured_motion_modeled_label",
+      "selection": "srkw_kinematic_match",
+      "measured": {
+        "depth_mean_m": 150.28,
+        "depth_range_m": 12.26,
+        "roll_abs_p90_deg": 146.7,
+        "yaw_steadiness": 0.271,
+        "fluke_amp_mean": 0.297,
+        "pitch_std_rad": 0.329,
+        "pitch_zero_crossings": 29
+      }
+    }
+  ]
+}

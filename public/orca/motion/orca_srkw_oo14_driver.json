@@ -1,0 +1,134 @@
+{
+  "format": "orca-biologging-prebake",
+  "format_version": 1,
+  "simulated": false,
+  "provenance": "REAL Southern Resident killer whale (Orcinus orca, SRKW) DTAG deployment 'oo14_264m' from Tennessen et al. 2024, Zenodo 10.5281/zenodo.13308835, CC-BY-4.0. Baked from oo14_264mprh50.mat by dev/bake_orca_srkw_driver.py via prebake.bake_mat. Modeled orca motion parameterized from / driven by this open data; identified only by deployment code/sex/population in the source. This is the orca DRIVER; humpback mn09_203a is contrast only and never drives the twin.",
+  "source": {
+    "type": "mat",
+    "file": "oo14_264mprh50.mat",
+    "native_fs_hz": 50,
+    "decimation_factor": 10,
+    "out_rate_hz": 5,
+    "stroke_band_hz": [
+      0.15,
+      0.6
+    ],
+    "declination_applied": false
+  },
+  "bin_file": "orca_srkw_oo14_driver.bin",
+  "layout": "interleaved-sample-major float32 little-endian, shape (n_samples, n_channels)",
+  "dtype": "float32-le",
+  "byte_order": "little-endian",
+  "sample_rate_hz": 5,
+  "n_samples": 40937,
+  "n_channels": 7,
+  "duration_s": 8187.4,
+  "angle_units": "radians",
+  "declination_deg_applied": 0,
+  "stroke_band_hz": [
+    0.15,
+    0.6
+  ],
+  "datum": {
+    "name": "NAVD88-0m",
+    "note": "depth_m is positive-down metres. The web applies Y = -depth_m * worldUnitsPerMeter at the live fit value; vertical placement is NOT baked in."
+  },
+  "channels": [
+    {
+      "name": "t_s",
+      "unit": "seconds",
+      "dof": null,
+      "desc": "Sample time on the common time base, t = i / sample_rate_hz."
+    },
+    {
+      "name": "body_yaw_rad",
+      "unit": "radians",
+      "dof": "body_yaw",
+      "frame": "true heading; NED 0=North, increasing clockwise toward East",
+      "sign": "Stored as declination-corrected TRUE heading in radians. Web maps to a rotation about scene +Y so the rostrum (+X) points along the heading (SKELETON.md section 5: +Y up, +X forward, +Z port).",
+      "source": "m2h(animal-frame M, A) + magnetic declination"
+    },
+    {
+      "name": "body_pitch_rad",
+      "unit": "radians",
+      "dof": "body_pitch",
+      "frame": "rotation about lateral Z",
+      "sign": "positive = nose-up (tagtools a2pr convention, SKELETON.md section 3/5)",
+      "source": "a2pr(animal-frame A)"
+    },
+    {
+      "name": "body_roll_rad",
+      "unit": "radians",
+      "dof": "body_roll",
+      "frame": "rotation about longitudinal +X",
+      "sign": "positive = dorsal surface banks toward +Z (port/left bank); full +/-pi range",
+      "source": "a2pr(animal-frame A)"
+    },
+    {
+      "name": "depth_m",
+      "unit": "metres positive-down",
+      "dof": "world Y (translation, not a bone)",
+      "frame": "NAVD88-0m datum (scene Y 0)",
+      "sign": "Web places the root at Y = -depth_m * worldUnitsPerMeter using the LIVE fit value (DEFAULT_WORLD_UNITS_PER_METER or the per-fit value the scene attaches), via setDepthPose. Not scaled here.",
+      "source": "depth from pressure channel P"
+    },
+    {
+      "name": "fluke_phase_rad",
+      "unit": "radians [0, 2*pi)",
+      "dof": "caudal[0..5] fluke beat (setFluke phase)",
+      "frame": "dorso-ventral, pitch-axis (Z) on the caudal chain",
+      "sign": "Instantaneous phase of the band-passed dorso-ventral (heave, Az) oscillation. Continuous so the beat stays smooth between samples.",
+      "source": "Hilbert phase of band-passed animal-frame Az (static/gravity removed)"
+    },
+    {
+      "name": "fluke_amplitude",
+      "unit": "normalized 0..1",
+      "dof": "caudal[0..5] fluke beat (setFluke amplitude)",
+      "frame": "scales the per-joint amplitude profile (0 = no beat, 1 = full nominal stroke)",
+      "sign": "Envelope (DBA) of the band-passed Az oscillation, normalized to 0..1.",
+      "source": "Hilbert envelope of band-passed animal-frame Az"
+    }
+  ],
+  "notes": [
+    "Read from OLD-format MATLAB .mat (scipy.io.loadmat), not HDF5.",
+    "Orientation is the file's derived pitch/roll/head product (radians).",
+    "head is magnetic unless a declination was supplied; web adds site declination.",
+    "Decimated to 5 Hz for web delivery (factor 5 from 25 Hz); full-res 25 Hz driver is in the box (S3). Ample for a ~0.2-0.35 Hz fluke."
+  ],
+  "bin_bytes": 1146236,
+  "species": "orca",
+  "ecotype": "SRKW",
+  "role": "driver",
+  "deployment": "oo14_264m",
+  "license": "CC-BY-4.0",
+  "dataset_doi": "10.5281/zenodo.13308835",
+  "citation": "Tennessen et al. 2024 (NOAA NWFSC / DFO), CC-BY-4.0",
+  "driver_stats": {
+    "native_fs_hz": 50,
+    "n_samples_native": 409370,
+    "decimation_factor": 2,
+    "out_rate_hz": 25,
+    "duration_s": 8187.4,
+    "depth_range_m": [
+      -2.543,
+      155.125
+    ],
+    "pitch_abs_p95_deg": 61.61,
+    "roll_abs_p95_deg": 133.25,
+    "roll_abs_p99_deg": 174.83,
+    "fluke_dsf": {
+      "method": "windowed in-band FFT peak over active-stroking windows (dsf-equivalent)",
+      "band_hz": [
+        0.15,
+        0.6
+      ],
+      "window_s": 60,
+      "n_windows": 136,
+      "n_active_windows": 68,
+      "median_hz": 0.1833,
+      "p25_hz": 0.15,
+      "p75_hz": 0.2875,
+      "all_windows_median_hz": 0.4083
+    }
+  }
+}

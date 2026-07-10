@@ -1,0 +1,229 @@
+{
+  "format": "orca-biologging-prebake",
+  "format_version": 1,
+  "simulated": false,
+  "provenance": "REAL humpback (Megaptera novaeangliae) DTAG deployment 'mn09_203a' ('lavaliers_Calf'), baked from the operator's external H5 /Users/gilraitses/whale-behavior-analysis/Visualization_Poster_Appendix/data/dive_analysis.h5 by dev/bake_humpback_contrast.py using prebake.py primitives. Role: CONTRAST baseline only. This is NOT an orca driver; the orca twin is never driven by humpback motion and humpback kinematics are never presented as orca.",
+  "source": {
+    "type": "h5-real",
+    "species": "humpback",
+    "role": "contrast",
+    "animal_id": "mn09_203a",
+    "animal_name": "lavaliers_Calf",
+    "h5_path": "/Users/gilraitses/whale-behavior-analysis/Visualization_Poster_Appendix/data/dive_analysis.h5",
+    "h5_channel_paths": {
+      "depth": "depth/values",
+      "pitch": "data/pitch",
+      "roll": "data/roll",
+      "head": "data/head",
+      "az": "data/Aw.3",
+      "time": "eti/values",
+      "sample_rate": "analysis/metadata/sample_rate"
+    },
+    "measured": true,
+    "derived_orientation_product": true
+  },
+  "bin_file": "humpback_mn09_203a_contrast.bin",
+  "layout": "interleaved-sample-major float32 little-endian, shape (n_samples, n_channels)",
+  "dtype": "float32-le",
+  "byte_order": "little-endian",
+  "sample_rate_hz": 5.0,
+  "n_samples": 99925,
+  "n_channels": 7,
+  "duration_s": 19984.8,
+  "angle_units": "radians",
+  "declination_deg_applied": 0.0,
+  "stroke_band_hz": [
+    0.12,
+    0.6
+  ],
+  "datum": {
+    "name": "NAVD88-0m",
+    "note": "depth_m is positive-down metres. The web applies Y = -depth_m * worldUnitsPerMeter at the live fit value; vertical placement is NOT baked in."
+  },
+  "channels": [
+    {
+      "name": "t_s",
+      "unit": "seconds",
+      "dof": null,
+      "desc": "Sample time on the common time base, t = i / sample_rate_hz."
+    },
+    {
+      "name": "body_yaw_rad",
+      "unit": "radians",
+      "dof": "body_yaw",
+      "frame": "true heading; NED 0=North, increasing clockwise toward East",
+      "sign": "Stored as declination-corrected TRUE heading in radians. Web maps to a rotation about scene +Y so the rostrum (+X) points along the heading (SKELETON.md section 5: +Y up, +X forward, +Z port).",
+      "source": "m2h(animal-frame M, A) + magnetic declination"
+    },
+    {
+      "name": "body_pitch_rad",
+      "unit": "radians",
+      "dof": "body_pitch",
+      "frame": "rotation about lateral Z",
+      "sign": "positive = nose-up (tagtools a2pr convention, SKELETON.md section 3/5)",
+      "source": "a2pr(animal-frame A)"
+    },
+    {
+      "name": "body_roll_rad",
+      "unit": "radians",
+      "dof": "body_roll",
+      "frame": "rotation about longitudinal +X",
+      "sign": "positive = dorsal surface banks toward +Z (port/left bank); full +/-pi range",
+      "source": "a2pr(animal-frame A)"
+    },
+    {
+      "name": "depth_m",
+      "unit": "metres positive-down",
+      "dof": "world Y (translation, not a bone)",
+      "frame": "NAVD88-0m datum (scene Y 0)",
+      "sign": "Web places the root at Y = -depth_m * worldUnitsPerMeter using the LIVE fit value (DEFAULT_WORLD_UNITS_PER_METER or the per-fit value the scene attaches), via setDepthPose. Not scaled here.",
+      "source": "depth from pressure channel P"
+    },
+    {
+      "name": "fluke_phase_rad",
+      "unit": "radians [0, 2*pi)",
+      "dof": "caudal[0..5] fluke beat (setFluke phase)",
+      "frame": "dorso-ventral, pitch-axis (Z) on the caudal chain",
+      "sign": "Instantaneous phase of the band-passed dorso-ventral (heave, Az) oscillation. Continuous so the beat stays smooth between samples.",
+      "source": "Hilbert phase of band-passed animal-frame Az (static/gravity removed)"
+    },
+    {
+      "name": "fluke_amplitude",
+      "unit": "normalized 0..1",
+      "dof": "caudal[0..5] fluke beat (setFluke amplitude)",
+      "frame": "scales the per-joint amplitude profile (0 = no beat, 1 = full nominal stroke)",
+      "sign": "Envelope (DBA) of the band-passed Az oscillation, normalized to 0..1.",
+      "source": "Hilbert envelope of band-passed animal-frame Az"
+    }
+  ],
+  "notes": [
+    "simulated=false: REAL humpback data (operator's own).",
+    "role=contrast: baseline for the orca-vs-humpback table; NOT the orca driver.",
+    "Orientation is the H5's already-derived pitch/roll/head product (radians).",
+    "Fluke beat extracted from the whale-frame dorso-ventral Aw.3 (Az) channel with a humpback stroke band [0.12, 0.6] Hz (slower than the orca 0.3-1.0 Hz band).",
+    "Validates prebake.py's bin/JSON format and Az-band fluke method on real per-sample animaltags data."
+  ],
+  "bin_bytes": 2797900,
+  "species": "humpback",
+  "role": "contrast",
+  "animal_id": "mn09_203a",
+  "contrast_baseline": {
+    "n_dives": 128,
+    "deployment_duration_s": 19984.8,
+    "sample_rate_hz": 5.0,
+    "max_depth_m": {
+      "min": 6.805,
+      "median": 20.848,
+      "max": 39.026,
+      "mean": 20.648,
+      "n": 128
+    },
+    "descent_rate_mps": {
+      "min": 0.029,
+      "median": 0.472,
+      "max": 1.252,
+      "mean": 0.524,
+      "n": 128
+    },
+    "ascent_rate_mps": {
+      "min": 0.032,
+      "median": 0.449,
+      "max": 1.328,
+      "mean": 0.501,
+      "n": 128
+    },
+    "descent_duration_s": {
+      "min": 10.0,
+      "median": 32.4,
+      "max": 202.2,
+      "mean": 39.647,
+      "n": 128
+    },
+    "bottom_duration_s": {
+      "min": 11.6,
+      "median": 30.1,
+      "max": 261.4,
+      "mean": 45.747,
+      "n": 128
+    },
+    "ascent_duration_s": {
+      "min": 5.6,
+      "median": 30.2,
+      "max": 328.2,
+      "mean": 49.055,
+      "n": 128
+    },
+    "dive_duration_s": {
+      "min": 30.0,
+      "median": 66.7,
+      "max": 411.0,
+      "mean": 88.702,
+      "n": 128
+    },
+    "depth_track_range_m": [
+      -0.386,
+      39.187
+    ],
+    "fluke_beat": {
+      "method": "Az-band (Aw.3) dominant frequency + tag stroke-peak cross-check",
+      "az_band_spectral_fpk_hz": 0.1276,
+      "az_band_spectral_caveat": "Whole-record FFT is biased low by intermittent stroking/glides; use the stroke-peak rate as the headline fluke-beat frequency.",
+      "stroke_peak_median_interval_s": 4.4,
+      "stroke_peak_fluke_hz": 0.2273,
+      "stroke_peak_count": 2405,
+      "fluke_beat_hz": 0.2273
+    },
+    "behavior_mix": [
+      {
+        "behavior": "Exploratory dives",
+        "seconds": 1394.2,
+        "fraction": 0.3488
+      },
+      {
+        "behavior": "Side rolls",
+        "seconds": 867.4,
+        "fraction": 0.217
+      },
+      {
+        "behavior": "Noodle feeding",
+        "seconds": 724.0,
+        "fraction": 0.1811
+      },
+      {
+        "behavior": "Kick feeding",
+        "seconds": 342.0,
+        "fraction": 0.0856
+      },
+      {
+        "behavior": "Feeding loop",
+        "seconds": 226.0,
+        "fraction": 0.0565
+      },
+      {
+        "behavior": "Surface Active",
+        "seconds": 209.4,
+        "fraction": 0.0524
+      },
+      {
+        "behavior": "Traveling",
+        "seconds": 100.2,
+        "fraction": 0.0251
+      },
+      {
+        "behavior": "Side rolls and loop",
+        "seconds": 93.8,
+        "fraction": 0.0235
+      },
+      {
+        "behavior": "Vertical loop",
+        "seconds": 40.6,
+        "fraction": 0.0102
+      },
+      {
+        "behavior": "End",
+        "seconds": 0.0,
+        "fraction": 0.0
+      }
+    ]
+  }
+}

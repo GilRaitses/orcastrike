@@ -1,0 +1,25 @@
+Reference repo: https://github.com/GilRaitses/orcastrike
+
+Clone this repo. It is a **standalone** Orca Strike game — all assets are committed
+(orca.glb, DTAG driver, hydrophone m4a). No WorkOS. No Playwright.
+
+## Run
+npm install
+npm run dev
+Open /orca-strike
+
+## If extending or fixing
+Read in repo:
+- README.md
+- app/orca-strike/OrcaStrikeScene.tsx (integration hub)
+- lib/scene/orcaStrike/ (controls, FSM, scoring, breach)
+- lib/scene/boats/ (boats + kayaks)
+- decisions are inlined in code comments; controls: Q dive, E surface, A/D roll, W/S thrust
+
+## Hard gates
+- Use public/orca/orca.glb — never substitute polygon orca
+- Use DTAG driver json+bin for rig articulation
+- O-key uses public/hydrophone/slice/orcasound_lab_20210825_srkw.m4a (in repo)
+- Boats AND kayaks must spawn
+
+Do not configure auth, deploy platforms, or demo test runners.

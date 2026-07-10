@@ -1,0 +1,810 @@
+{
+  "schema": "bsw-acoustic-classification/v1",
+  "model_version": "bam-srkw-presence-v0",
+  "train_run_id": "240570e-20260629T093736Z",
+  "clipId": "orcasound_lab_20210825_srkw",
+  "stationId": "rpi_orcasound_lab",
+  "station": {
+    "name": "Orcasound Lab",
+    "lat": 48.5583362,
+    "lng": -123.1735774
+  },
+  "audio": {
+    "url": "/hydrophone/slice/orcasound_lab_20210825_srkw.m4a",
+    "durationS": 178.5,
+    "license": "CC BY-NC-SA 4.0",
+    "attribution": "Orcasound - orcasound.net",
+    "honesty": "measured"
+  },
+  "window": {
+    "windowS": 3.0,
+    "hopS": 1.5,
+    "threshold": 0.5
+  },
+  "classes": [
+    "srkw_call_presence"
+  ],
+  "eval": {
+    "task": "binary SRKW-call presence vs absence per window",
+    "selected_model": "rf",
+    "test_f1": 0.9922,
+    "test_precision": 0.9846,
+    "test_recall": 1.0,
+    "test_auprc": 1.0,
+    "held_out": "temporal within pool",
+    "label_basis": "bout-level weak labels",
+    "known_confounds": [
+      "positives (in-bout) and negatives (pre-bout) are different times of the same session; the model may exploit session-level acoustic differences, not call morphology alone",
+      "bout-level labels: in-bout windows include non-vocal gaps mislabeled positive; reported metrics are an upper bound on per-call detection",
+      "single hydrophone, single bout; cross-station / cross-day generalization NOT evaluated here"
+    ]
+  },
+  "honesty": {
+    "inference": "measured_model_output",
+    "claim": "estimate",
+    "wording": "estimated: SRKW call present (confidence X)",
+    "not_claimed": [
+      "whale count",
+      "pod / individual ID",
+      "call type",
+      "single vs multiple callers"
+    ],
+    "spawn": "modeled_3d_placement",
+    "motion": "measured_srkw_dtag",
+    "crossSensor": "illustrative",
+    "representativeness": "Kinematics are representative SRKW DTAG motion, not the recorded animal."
+  },
+  "ecotype": {
+    "served": true,
+    "inference": "measured_model_output",
+    "claim": "estimate",
+    "head": "bam-dclde-salish-v2-ecotype",
+    "feature": "Perch 2.0 embedding (EfficientNet-B3, 1536-dim, Apache-2.0)",
+    "headArtifact": "infra/acoustic/ecotype_head_v2.json",
+    "wordingTemplates": [
+      "Estimated ecotype: Southern Resident (SRKW)",
+      "Estimated ecotype: Bigg's / Transient (TKW)"
+    ],
+    "estimate": "SRKW",
+    "wording": "Estimated ecotype: Southern Resident (SRKW)",
+    "confidence": 0.9997,
+    "confidencePct": "99.97%",
+    "confidenceBasis": "mean prior-recalibrated P(SRKW) over 91 present windows; recalibrated toward the ~5% deployment TKW prior (pi_train_tkw 0.2054 -> pi_deploy 0.05)",
+    "rawMeanPTkw": 0.0015,
+    "nWindows": 91,
+    "provenanceChip": "ecotype: learned-embedding estimate (Perch 2.0), cross-station eval - median TKW F1 0.80, AUPRC 0.96; per-station variance",
+    "eval": {
+      "ref": "infra/acoustic/eval_report_dclde_v2.json",
+      "protocol": "leave-station-OUT, 5 seeds, median decides",
+      "median_TKW_f1": 0.805,
+      "median_TKW_recall": 0.788,
+      "median_SRKW_f1": 0.902,
+      "median_TKW_AUPRC": 0.956,
+      "crossStationNote": "this clip's Orcasound Lab recorder is NOT a DCLDE training station; the estimate is cross-station and carries the eval's per-station variance"
+    },
+    "not_claimed": [
+      "whale count",
+      "pod / individual ID",
+      "SRKW S1-S40 catalog call",
+      "call type",
+      "single vs multiple callers"
+    ]
+  },
+  "windows": [
+    {
+      "tStartS": 0.0,
+      "tEndS": 3.0,
+      "presence": false,
+      "presenceConfidence": 0.2967
+    },
+    {
+      "tStartS": 1.5,
+      "tEndS": 4.5,
+      "presence": false,
+      "presenceConfidence": 0.1267
+    },
+    {
+      "tStartS": 3.0,
+      "tEndS": 6.0,
+      "presence": false,
+      "presenceConfidence": 0.18
+    },
+    {
+      "tStartS": 4.5,
+      "tEndS": 7.5,
+      "presence": false,
+      "presenceConfidence": 0.38
+    },
+    {
+      "tStartS": 6.0,
+      "tEndS": 9.0,
+      "presence": false,
+      "presenceConfidence": 0.4067
+    },
+    {
+      "tStartS": 7.5,
+      "tEndS": 10.5,
+      "presence": false,
+      "presenceConfidence": 0.47
+    },
+    {
+      "tStartS": 9.0,
+      "tEndS": 12.0,
+      "presence": true,
+      "presenceConfidence": 0.53
+    },
+    {
+      "tStartS": 10.5,
+      "tEndS": 13.5,
+      "presence": false,
+      "presenceConfidence": 0.4967
+    },
+    {
+      "tStartS": 12.0,
+      "tEndS": 15.0,
+      "presence": true,
+      "presenceConfidence": 0.57
+    },
+    {
+      "tStartS": 13.5,
+      "tEndS": 16.5,
+      "presence": true,
+      "presenceConfidence": 0.5133
+    },
+    {
+      "tStartS": 15.0,
+      "tEndS": 18.0,
+      "presence": false,
+      "presenceConfidence": 0.4033
+    },
+    {
+      "tStartS": 16.5,
+      "tEndS": 19.5,
+      "presence": false,
+      "presenceConfidence": 0.2633
+    },
+    {
+      "tStartS": 18.0,
+      "tEndS": 21.0,
+      "presence": true,
+      "presenceConfidence": 0.54
+    },
+    {
+      "tStartS": 19.5,
+      "tEndS": 22.5,
+      "presence": false,
+      "presenceConfidence": 0.31
+    },
+    {
+      "tStartS": 21.0,
+      "tEndS": 24.0,
+      "presence": false,
+      "presenceConfidence": 0.2467
+    },
+    {
+      "tStartS": 22.5,
+      "tEndS": 25.5,
+      "presence": false,
+      "presenceConfidence": 0.2833
+    },
+    {
+      "tStartS": 24.0,
+      "tEndS": 27.0,
+      "presence": false,
+      "presenceConfidence": 0.2133
+    },
+    {
+      "tStartS": 25.5,
+      "tEndS": 28.5,
+      "presence": false,
+      "presenceConfidence": 0.28
+    },
+    {
+      "tStartS": 27.0,
+      "tEndS": 30.0,
+      "presence": false,
+      "presenceConfidence": 0.27
+    },
+    {
+      "tStartS": 28.5,
+      "tEndS": 31.5,
+      "presence": false,
+      "presenceConfidence": 0.1633
+    },
+    {
+      "tStartS": 30.0,
+      "tEndS": 33.0,
+      "presence": false,
+      "presenceConfidence": 0.1333
+    },
+    {
+      "tStartS": 31.5,
+      "tEndS": 34.5,
+      "presence": false,
+      "presenceConfidence": 0.4233
+    },
+    {
+      "tStartS": 33.0,
+      "tEndS": 36.0,
+      "presence": true,
+      "presenceConfidence": 0.5067
+    },
+    {
+      "tStartS": 34.5,
+      "tEndS": 37.5,
+      "presence": false,
+      "presenceConfidence": 0.2967
+    },
+    {
+      "tStartS": 36.0,
+      "tEndS": 39.0,
+      "presence": false,
+      "presenceConfidence": 0.2533
+    },
+    {
+      "tStartS": 37.5,
+      "tEndS": 40.5,
+      "presence": false,
+      "presenceConfidence": 0.2867
+    },
+    {
+      "tStartS": 39.0,
+      "tEndS": 42.0,
+      "presence": false,
+      "presenceConfidence": 0.3233
+    },
+    {
+      "tStartS": 40.5,
+      "tEndS": 43.5,
+      "presence": true,
+      "presenceConfidence": 0.65
+    },
+    {
+      "tStartS": 42.0,
+      "tEndS": 45.0,
+      "presence": true,
+      "presenceConfidence": 0.6767
+    },
+    {
+      "tStartS": 43.5,
+      "tEndS": 46.5,
+      "presence": false,
+      "presenceConfidence": 0.4
+    },
+    {
+      "tStartS": 45.0,
+      "tEndS": 48.0,
+      "presence": true,
+      "presenceConfidence": 0.5167
+    },
+    {
+      "tStartS": 46.5,
+      "tEndS": 49.5,
+      "presence": true,
+      "presenceConfidence": 0.5767
+    },
+    {
+      "tStartS": 48.0,
+      "tEndS": 51.0,
+      "presence": false,
+      "presenceConfidence": 0.47
+    },
+    {
+      "tStartS": 49.5,
+      "tEndS": 52.5,
+      "presence": false,
+      "presenceConfidence": 0.31
+    },
+    {
+      "tStartS": 51.0,
+      "tEndS": 54.0,
+      "presence": true,
+      "presenceConfidence": 0.5267
+    },
+    {
+      "tStartS": 52.5,
+      "tEndS": 55.5,
+      "presence": true,
+      "presenceConfidence": 0.7233
+    },
+    {
+      "tStartS": 54.0,
+      "tEndS": 57.0,
+      "presence": true,
+      "presenceConfidence": 0.77
+    },
+    {
+      "tStartS": 55.5,
+      "tEndS": 58.5,
+      "presence": true,
+      "presenceConfidence": 0.84
+    },
+    {
+      "tStartS": 57.0,
+      "tEndS": 60.0,
+      "presence": false,
+      "presenceConfidence": 0.4167
+    },
+    {
+      "tStartS": 58.5,
+      "tEndS": 61.5,
+      "presence": false,
+      "presenceConfidence": 0.41
+    },
+    {
+      "tStartS": 60.0,
+      "tEndS": 63.0,
+      "presence": true,
+      "presenceConfidence": 0.7533
+    },
+    {
+      "tStartS": 61.5,
+      "tEndS": 64.5,
+      "presence": true,
+      "presenceConfidence": 0.8467
+    },
+    {
+      "tStartS": 63.0,
+      "tEndS": 66.0,
+      "presence": true,
+      "presenceConfidence": 0.7367
+    },
+    {
+      "tStartS": 64.5,
+      "tEndS": 67.5,
+      "presence": true,
+      "presenceConfidence": 0.56
+    },
+    {
+      "tStartS": 66.0,
+      "tEndS": 69.0,
+      "presence": true,
+      "presenceConfidence": 0.8
+    },
+    {
+      "tStartS": 67.5,
+      "tEndS": 70.5,
+      "presence": true,
+      "presenceConfidence": 0.7333
+    },
+    {
+      "tStartS": 69.0,
+      "tEndS": 72.0,
+      "presence": true,
+      "presenceConfidence": 0.7633
+    },
+    {
+      "tStartS": 70.5,
+      "tEndS": 73.5,
+      "presence": true,
+      "presenceConfidence": 0.77
+    },
+    {
+      "tStartS": 72.0,
+      "tEndS": 75.0,
+      "presence": true,
+      "presenceConfidence": 0.7033
+    },
+    {
+      "tStartS": 73.5,
+      "tEndS": 76.5,
+      "presence": true,
+      "presenceConfidence": 0.69
+    },
+    {
+      "tStartS": 75.0,
+      "tEndS": 78.0,
+      "presence": true,
+      "presenceConfidence": 0.69
+    },
+    {
+      "tStartS": 76.5,
+      "tEndS": 79.5,
+      "presence": true,
+      "presenceConfidence": 0.66
+    },
+    {
+      "tStartS": 78.0,
+      "tEndS": 81.0,
+      "presence": true,
+      "presenceConfidence": 0.74
+    },
+    {
+      "tStartS": 79.5,
+      "tEndS": 82.5,
+      "presence": true,
+      "presenceConfidence": 0.6233
+    },
+    {
+      "tStartS": 81.0,
+      "tEndS": 84.0,
+      "presence": true,
+      "presenceConfidence": 0.76
+    },
+    {
+      "tStartS": 82.5,
+      "tEndS": 85.5,
+      "presence": true,
+      "presenceConfidence": 0.82
+    },
+    {
+      "tStartS": 84.0,
+      "tEndS": 87.0,
+      "presence": true,
+      "presenceConfidence": 0.8933
+    },
+    {
+      "tStartS": 85.5,
+      "tEndS": 88.5,
+      "presence": true,
+      "presenceConfidence": 0.8733
+    },
+    {
+      "tStartS": 87.0,
+      "tEndS": 90.0,
+      "presence": true,
+      "presenceConfidence": 0.9267
+    },
+    {
+      "tStartS": 88.5,
+      "tEndS": 91.5,
+      "presence": true,
+      "presenceConfidence": 0.9033
+    },
+    {
+      "tStartS": 90.0,
+      "tEndS": 93.0,
+      "presence": true,
+      "presenceConfidence": 0.8667
+    },
+    {
+      "tStartS": 91.5,
+      "tEndS": 94.5,
+      "presence": true,
+      "presenceConfidence": 0.9067
+    },
+    {
+      "tStartS": 93.0,
+      "tEndS": 96.0,
+      "presence": true,
+      "presenceConfidence": 0.97
+    },
+    {
+      "tStartS": 94.5,
+      "tEndS": 97.5,
+      "presence": true,
+      "presenceConfidence": 0.9933
+    },
+    {
+      "tStartS": 96.0,
+      "tEndS": 99.0,
+      "presence": true,
+      "presenceConfidence": 0.9533
+    },
+    {
+      "tStartS": 97.5,
+      "tEndS": 100.5,
+      "presence": true,
+      "presenceConfidence": 0.88
+    },
+    {
+      "tStartS": 99.0,
+      "tEndS": 102.0,
+      "presence": true,
+      "presenceConfidence": 0.92
+    },
+    {
+      "tStartS": 100.5,
+      "tEndS": 103.5,
+      "presence": true,
+      "presenceConfidence": 0.9733
+    },
+    {
+      "tStartS": 102.0,
+      "tEndS": 105.0,
+      "presence": true,
+      "presenceConfidence": 0.97
+    },
+    {
+      "tStartS": 103.5,
+      "tEndS": 106.5,
+      "presence": true,
+      "presenceConfidence": 0.9933
+    },
+    {
+      "tStartS": 105.0,
+      "tEndS": 108.0,
+      "presence": true,
+      "presenceConfidence": 0.9967
+    },
+    {
+      "tStartS": 106.5,
+      "tEndS": 109.5,
+      "presence": true,
+      "presenceConfidence": 0.9967
+    },
+    {
+      "tStartS": 108.0,
+      "tEndS": 111.0,
+      "presence": true,
+      "presenceConfidence": 0.9967
+    },
+    {
+      "tStartS": 109.5,
+      "tEndS": 112.5,
+      "presence": true,
+      "presenceConfidence": 0.9967
+    },
+    {
+      "tStartS": 111.0,
+      "tEndS": 114.0,
+      "presence": true,
+      "presenceConfidence": 0.9933
+    },
+    {
+      "tStartS": 112.5,
+      "tEndS": 115.5,
+      "presence": true,
+      "presenceConfidence": 0.98
+    },
+    {
+      "tStartS": 114.0,
+      "tEndS": 117.0,
+      "presence": true,
+      "presenceConfidence": 1.0
+    },
+    {
+      "tStartS": 115.5,
+      "tEndS": 118.5,
+      "presence": true,
+      "presenceConfidence": 1.0
+    },
+    {
+      "tStartS": 117.0,
+      "tEndS": 120.0,
+      "presence": true,
+      "presenceConfidence": 0.99
+    },
+    {
+      "tStartS": 118.5,
+      "tEndS": 121.5,
+      "presence": true,
+      "presenceConfidence": 0.9867
+    },
+    {
+      "tStartS": 120.0,
+      "tEndS": 123.0,
+      "presence": true,
+      "presenceConfidence": 0.9967
+    },
+    {
+      "tStartS": 121.5,
+      "tEndS": 124.5,
+      "presence": true,
+      "presenceConfidence": 0.9867
+    },
+    {
+      "tStartS": 123.0,
+      "tEndS": 126.0,
+      "presence": true,
+      "presenceConfidence": 1.0
+    },
+    {
+      "tStartS": 124.5,
+      "tEndS": 127.5,
+      "presence": true,
+      "presenceConfidence": 0.7333
+    },
+    {
+      "tStartS": 126.0,
+      "tEndS": 129.0,
+      "presence": true,
+      "presenceConfidence": 0.9533
+    },
+    {
+      "tStartS": 127.5,
+      "tEndS": 130.5,
+      "presence": true,
+      "presenceConfidence": 0.9567
+    },
+    {
+      "tStartS": 129.0,
+      "tEndS": 132.0,
+      "presence": true,
+      "presenceConfidence": 0.9067
+    },
+    {
+      "tStartS": 130.5,
+      "tEndS": 133.5,
+      "presence": true,
+      "presenceConfidence": 0.93
+    },
+    {
+      "tStartS": 132.0,
+      "tEndS": 135.0,
+      "presence": true,
+      "presenceConfidence": 0.9967
+    },
+    {
+      "tStartS": 133.5,
+      "tEndS": 136.5,
+      "presence": true,
+      "presenceConfidence": 1.0
+    },
+    {
+      "tStartS": 135.0,
+      "tEndS": 138.0,
+      "presence": true,
+      "presenceConfidence": 0.9533
+    },
+    {
+      "tStartS": 136.5,
+      "tEndS": 139.5,
+      "presence": true,
+      "presenceConfidence": 0.98
+    },
+    {
+      "tStartS": 138.0,
+      "tEndS": 141.0,
+      "presence": true,
+      "presenceConfidence": 0.9933
+    },
+    {
+      "tStartS": 139.5,
+      "tEndS": 142.5,
+      "presence": true,
+      "presenceConfidence": 0.9967
+    },
+    {
+      "tStartS": 141.0,
+      "tEndS": 144.0,
+      "presence": true,
+      "presenceConfidence": 0.9867
+    },
+    {
+      "tStartS": 142.5,
+      "tEndS": 145.5,
+      "presence": true,
+      "presenceConfidence": 0.99
+    },
+    {
+      "tStartS": 144.0,
+      "tEndS": 147.0,
+      "presence": true,
+      "presenceConfidence": 1.0
+    },
+    {
+      "tStartS": 145.5,
+      "tEndS": 148.5,
+      "presence": true,
+      "presenceConfidence": 0.9867
+    },
+    {
+      "tStartS": 147.0,
+      "tEndS": 150.0,
+      "presence": true,
+      "presenceConfidence": 0.8733
+    },
+    {
+      "tStartS": 148.5,
+      "tEndS": 151.5,
+      "presence": true,
+      "presenceConfidence": 0.9867
+    },
+    {
+      "tStartS": 150.0,
+      "tEndS": 153.0,
+      "presence": true,
+      "presenceConfidence": 0.98
+    },
+    {
+      "tStartS": 151.5,
+      "tEndS": 154.5,
+      "presence": true,
+      "presenceConfidence": 0.99
+    },
+    {
+      "tStartS": 153.0,
+      "tEndS": 156.0,
+      "presence": true,
+      "presenceConfidence": 0.9833
+    },
+    {
+      "tStartS": 154.5,
+      "tEndS": 157.5,
+      "presence": true,
+      "presenceConfidence": 0.9767
+    },
+    {
+      "tStartS": 156.0,
+      "tEndS": 159.0,
+      "presence": true,
+      "presenceConfidence": 0.9233
+    },
+    {
+      "tStartS": 157.5,
+      "tEndS": 160.5,
+      "presence": true,
+      "presenceConfidence": 0.9933
+    },
+    {
+      "tStartS": 159.0,
+      "tEndS": 162.0,
+      "presence": true,
+      "presenceConfidence": 0.9967
+    },
+    {
+      "tStartS": 160.5,
+      "tEndS": 163.5,
+      "presence": true,
+      "presenceConfidence": 0.9733
+    },
+    {
+      "tStartS": 162.0,
+      "tEndS": 165.0,
+      "presence": true,
+      "presenceConfidence": 0.94
+    },
+    {
+      "tStartS": 163.5,
+      "tEndS": 166.5,
+      "presence": true,
+      "presenceConfidence": 0.97
+    },
+    {
+      "tStartS": 165.0,
+      "tEndS": 168.0,
+      "presence": true,
+      "presenceConfidence": 0.99
+    },
+    {
+      "tStartS": 166.5,
+      "tEndS": 169.5,
+      "presence": true,
+      "presenceConfidence": 0.9733
+    },
+    {
+      "tStartS": 168.0,
+      "tEndS": 171.0,
+      "presence": true,
+      "presenceConfidence": 1.0
+    },
+    {
+      "tStartS": 169.5,
+      "tEndS": 172.5,
+      "presence": true,
+      "presenceConfidence": 0.9933
+    },
+    {
+      "tStartS": 171.0,
+      "tEndS": 174.0,
+      "presence": true,
+      "presenceConfidence": 0.9467
+    },
+    {
+      "tStartS": 172.5,
+      "tEndS": 175.5,
+      "presence": true,
+      "presenceConfidence": 0.63
+    },
+    {
+      "tStartS": 174.0,
+      "tEndS": 177.0,
+      "presence": true,
+      "presenceConfidence": 0.6333
+    },
+    {
+      "tStartS": 175.5,
+      "tEndS": 178.5,
+      "presence": true,
+      "presenceConfidence": 0.9667
+    }
+  ],
+  "summary": {
+    "presenceFraction": 0.7712,
+    "meanConfidence": 0.7384,
+    "clipPresence": true,
+    "spawnCount": 1,
+    "spawnCountBasis": "presence_only"
+  }
+}
