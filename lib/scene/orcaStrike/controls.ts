@@ -11,10 +11,14 @@ export interface StrikeControlsSampler {
   dispose(): void;
 }
 
-const DIVE_CODES = new Set(["KeyQ"]);
-const SURFACE_CODES = new Set(["KeyE"]);
-const ROLL_LEFT_CODES = new Set(["KeyA", "ArrowLeft"]);
-const ROLL_RIGHT_CODES = new Set(["KeyD", "ArrowRight"]);
+// Strike keyboard scheme: Q rises, E dives. Arrow keys are a keyboard
+// fallback for mouse-look: up/down manage depth and left/right steer.
+const DIVE_CODES = new Set(["KeyE", "ArrowDown"]);
+const SURFACE_CODES = new Set(["KeyQ", "ArrowUp"]);
+const ROLL_LEFT_CODES = new Set(["KeyA"]);
+const ROLL_RIGHT_CODES = new Set(["KeyD"]);
+const LOOK_LEFT_CODES = new Set(["ArrowLeft"]);
+const LOOK_RIGHT_CODES = new Set(["ArrowRight"]);
 const BREACH_CODES = new Set(["Space"]);
 const BLOWHOLE_CODES = new Set(["KeyB"]);
 const SONAR_CODES = new Set(["KeyO"]);
@@ -33,11 +37,16 @@ export function createStrikeControlsSampler(): StrikeControlsSampler {
   let rollLeft = false;
   let rollRight = false;
   let breachHeld = false;
+  let lookLeft = false;
+  let lookRight = false;
   let blowholeEdge = false;
   let sonarEdge = false;
   let radarEdge = false;
 
   function onKeyDown(e: KeyboardEvent): void {
+    if (DIVE_CODES.has(e.code) || SURFACE_CODES.has(e.code) || LOOK_LEFT_CODES.has(e.code) || LOOK_RIGHT_CODES.has(e.code)) {
+      e.preventDefault();
+    }
     if (DIVE_CODES.has(e.code)) dive = true;
     else if (SURFACE_CODES.has(e.code)) surface = true;
     else if (ROLL_LEFT_CODES.has(e.code)) {
@@ -46,7 +55,9 @@ export function createStrikeControlsSampler(): StrikeControlsSampler {
     } else if (ROLL_RIGHT_CODES.has(e.code)) {
       rollRight = true;
       rollLeft = false;
-    } else if (BREACH_CODES.has(e.code)) breachHeld = true;
+    } else if (LOOK_LEFT_CODES.has(e.code)) lookLeft = true;
+    else if (LOOK_RIGHT_CODES.has(e.code)) lookRight = true;
+    else if (BREACH_CODES.has(e.code)) breachHeld = true;
     else if (BLOWHOLE_CODES.has(e.code)) blowholeEdge = true;
     else if (SONAR_CODES.has(e.code)) sonarEdge = true;
     else if (RADAR_CODES.has(e.code)) radarEdge = true;
@@ -57,6 +68,8 @@ export function createStrikeControlsSampler(): StrikeControlsSampler {
     else if (SURFACE_CODES.has(e.code)) surface = false;
     else if (ROLL_LEFT_CODES.has(e.code)) rollLeft = false;
     else if (ROLL_RIGHT_CODES.has(e.code)) rollRight = false;
+    else if (LOOK_LEFT_CODES.has(e.code)) lookLeft = false;
+    else if (LOOK_RIGHT_CODES.has(e.code)) lookRight = false;
     else if (BREACH_CODES.has(e.code)) breachHeld = false;
   }
 
@@ -76,7 +89,7 @@ export function createStrikeControlsSampler(): StrikeControlsSampler {
         blowholeTap: blowholeEdge,
         sonarEmit: sonarEdge,
         radarPing: radarEdge,
-        yawDelta: raw.yawDelta,
+        yawDelta: raw.yawDelta + (lookRight ? 0.035 : 0) - (lookLeft ? 0.035 : 0),
         pitchDelta: raw.pitchDelta,
         boost: raw.boost,
       };

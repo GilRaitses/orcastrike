@@ -2,8 +2,10 @@
 
 import { aabbOverlap, type KayakHitbox, type Vec3 } from "./breach";
 
-export const BLOWHOLE_CHARGE_PER_TAP = 0.22;
-export const BLOWHOLE_CHARGE_DECAY_PER_S = 0.15;
+// Four deliberate taps create a full blow. Charge only drains while the
+// player is between taps, so the final tap can reliably fire the squirt.
+export const BLOWHOLE_CHARGE_PER_TAP = 0.25;
+export const BLOWHOLE_CHARGE_DECAY_PER_S = 0.12;
 export const BLOWHOLE_FIRE_THRESHOLD = 1.0;
 export const BLOWHOLE_SQUIRT_DURATION_S = 0.45;
 export const BLOWHOLE_CONE_HALF_ANGLE_RAD = (18 * Math.PI) / 180;
@@ -24,17 +26,16 @@ export function tickBlowholeCharge(
   dt: number,
   inChargeMode: boolean,
 ): number {
-  let next = charge;
-  // A tap must be able to reach the exact firing threshold. Previously the
-  // decay was applied after every tap, so a charge capped at 1 immediately
-  // became < 1 and `canFireBlowhole` could never succeed.
+  const safeCharge = Number.isFinite(charge) ? Math.min(1, Math.max(0, charge)) : 0;
   if (blowholeTap) {
-    return Math.min(1, next + BLOWHOLE_CHARGE_PER_TAP);
+    // Do not decay in the same frame as a tap. Decaying after a full tap made
+    // the value fall below the firing threshold before the FSM checked it.
+    return Math.min(1, safeCharge + BLOWHOLE_CHARGE_PER_TAP);
   }
-  if (inChargeMode || next > 0) {
-    next = Math.max(0, next - BLOWHOLE_CHARGE_DECAY_PER_S * dt);
+  if (inChargeMode || safeCharge > 0) {
+    return Math.max(0, safeCharge - BLOWHOLE_CHARGE_DECAY_PER_S * Math.max(0, dt));
   }
-  return next;
+  return safeCharge;
 }
 
 export function canFireBlowhole(
@@ -78,18 +79,17 @@ export function checkSquirtConeHits(
 ): string[] {
   const hits: string[] = [];
   for (const kayak of kayaks) {
-    // The rendered spray is pitched upward, but kayaks sit on the waterline.
-    // Testing that visual 3-D ray against y=0.25 made every normal-range shot
-    // sail over a kayak. Gameplay hit detection is intentionally evaluated in
-    // the water plane, using the same heading, angular spread, and range.
+    // The visible jet arcs upward, while kayaks sit at the waterline. Use a
+    // horizontal gameplay cone so an accurately aimed shot does not pass over
+    // every target due only to the visual pitch of the water arc.
     if (pointInSquirtWaterCone(origin, kayak)) hits.push(kayak.id);
   }
   return hits;
 }
 
-function pointInSquirtWaterCone(origin: BlowholeSquirtOrigin, kayak: KayakHitbox): boolean {
-  const dx = kayak.x - origin.x;
-  const dz = kayak.z - origin.z;
+function pointInSquirtWaterCone(origin: BlowholeSquirtOrigin, target: KayakHitbox): boolean {
+  const dx = target.x - origin.x;
+  const dz = target.z - origin.z;
   const range = Math.hypot(dx, dz);
   if (range > BLOWHOLE_CONE_RANGE_M || range < 1e-3) return false;
 
