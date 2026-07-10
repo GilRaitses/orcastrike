@@ -3,7 +3,7 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { StrikeSpawnSelection } from "@/lib/scene/orcaStrike/types";
 
@@ -28,10 +28,10 @@ function PreviewOrca(): JSX.Element {
     const material = node.material as THREE.MeshStandardMaterial;
     if (material?.isMeshStandardMaterial) { material.envMapIntensity = 1.05; material.color.set("#ffffff"); }
   }), [model]);
-  return <group ref={group} rotation={[0, -0.5, 0]} scale={1.5}><primitive object={model} /></group>;
+  return <group ref={group} rotation={[0, -0.5, 0]} scale={0.92}><primitive object={model} /></group>;
 }
 function OrcaPreview(): JSX.Element {
-  return <Canvas className="orca-strike-carousel-canvas" gl={{ alpha: true, antialias: false }} dpr={[1,1.35]} camera={{ position: [6.4, 2.5, 6.7], fov: 34 }}>
+  return <Canvas className="orca-strike-carousel-canvas" gl={{ alpha: true, antialias: false }} dpr={[1,1.35]} camera={{ position: [7.8, 2.8, 8.6], fov: 40 }}>
     <ambientLight intensity={1.3} color="#dcfffb" /><directionalLight position={[5,7,5]} intensity={2.3} color="#ffffff" /><pointLight position={[-4,2,2]} intensity={2.8} color="#5ee5db" /><PreviewOrca />
   </Canvas>;
 }
@@ -41,6 +41,14 @@ export default function OrcaSelect({ selectedId, onSelect }: OrcaSelectProps): J
   const startX = useRef<number | null>(null);
   const [dragging, setDragging] = useState(false);
   function move(direction: -1 | 1): void { const next = (index + direction + ORCA_SKIN_OPTIONS.length) % ORCA_SKIN_OPTIONS.length; onSelect(ORCA_SKIN_OPTIONS[next].id); }
+  useEffect(() => {
+    const cycle = window.setInterval(() => move(1), 5000);
+    const keyboard = (event: KeyboardEvent) => { if (event.code === "ArrowLeft") move(-1); if (event.code === "ArrowRight") move(1); };
+    window.addEventListener("keydown", keyboard);
+    return () => { window.clearInterval(cycle); window.removeEventListener("keydown", keyboard); };
+  // The carousel only needs to re-register when selected type changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
   return <section className="orca-strike-orca-select" onPointerDown={(e)=>{startX.current=e.clientX;setDragging(true)}} onPointerUp={(e)=>{if(startX.current!==null&&Math.abs(e.clientX-startX.current)>42)move(e.clientX<startX.current?1:-1);startX.current=null;setDragging(false)}}>
     <div className="orca-strike-carousel-track" style={{ transform:`translateX(-${index*50}%)`, transition: dragging ? "none" : "transform 480ms cubic-bezier(.2,.82,.25,1)" }}>
       {ORCA_SKIN_OPTIONS.map((orca) => <article className="orca-strike-carousel-slide" key={orca.id} aria-hidden={orca.id!==selectedId}><OrcaPreview /><div className="orca-strike-carousel-copy"><p>CHOOSE YOUR ORCA</p><h2>{orca.label}</h2><span>{orca.detail}</span></div></article>)}

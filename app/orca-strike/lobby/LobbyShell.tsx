@@ -133,7 +133,7 @@ export default function LobbyShell({ onStart }: LobbyShellProps): JSX.Element {
         :global(.orca-strike-carousel-canvas) { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; }
         :global(.orca-strike-carousel-copy) { position: absolute; left: clamp(1.25rem, 7vw, 8rem); bottom: 2rem; pointer-events: none; }
         :global(.orca-strike-carousel-copy p) { margin: 0 0 .25rem; font: .68rem ui-monospace,monospace; letter-spacing: .18em; color: #9aece4; }
-        :global(.orca-strike-carousel-copy h2) { margin: 0; font-size: clamp(2rem, 5vw, 4.2rem); letter-spacing: -.06em; }
+        :global(.orca-strike-carousel-copy h2) { margin: 0; font-family: Impact, Haettenschweiler, "Arial Black", sans-serif; font-style: italic; font-size: clamp(2rem, 5vw, 4.2rem); letter-spacing: .015em; line-height: .9; color: #fff6d2; text-shadow: 3px 3px 0 #142c39, 0 0 18px rgba(90,235,217,.6); transform: skewX(-8deg); }
         :global(.orca-strike-carousel-copy span) { opacity: .75; }
         :global(.orca-strike-carousel-arrow) { position: absolute; top: 48%; z-index: 2; width: 3rem; height: 3rem; border-radius: 50%; border: 1px solid rgba(176,255,246,.5); background: rgba(4,24,33,.38); color: #dffffa; font-size: 1.4rem; cursor: pointer; }
         :global(.orca-strike-carousel-arrow.is-left) { left: 1.25rem; } :global(.orca-strike-carousel-arrow.is-right) { right: 1.25rem; }
@@ -166,7 +166,7 @@ export default function LobbyShell({ onStart }: LobbyShellProps): JSX.Element {
         }
         :global(.orca-strike-spawn-canvas) {
           width: 100%;
-          max-width: ${MAP_SIZE_PX}px;
+          max-width: 420px;
           border-radius: 8px;
           border: 1px solid rgba(120, 200, 255, 0.3);
           cursor: crosshair;
