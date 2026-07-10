@@ -151,6 +151,8 @@ interface SceneContentProps {
   onPointerLockChange: (locked: boolean) => void;
   onBathyFailed: () => void;
   onPilotUpdate: (state: { x: number; z: number; heading: number; depthM: number }) => void;
+  onBellyPrompt: (text: string | null) => void;
+  onBlowholeTarget: (target: { id: string; x: number; z: number; label: string } | null) => void;
   teleportRequestRef: React.MutableRefObject<{ x: number; z: number } | null>;
   pingRequestedRef: React.MutableRefObject<boolean>;
   isMobilePilot: boolean;
@@ -188,6 +190,8 @@ function SceneContent({
   onPointerLockChange,
   onBathyFailed,
   onPilotUpdate,
+  onBellyPrompt,
+  onBlowholeTarget,
   teleportRequestRef,
   pingRequestedRef,
   isMobilePilot,
@@ -209,9 +213,11 @@ function SceneContent({
       skyColor: sky,
       pmrem,
     });
-    handle.underwater.absorption.set(0.012, 0.006, 0.003);
-    handle.underwater.inScatterColor.set("#124550");
-    handle.underwater.visibility = 70;
+    // Clearer local water preserves the orca's black-and-white coat; atmosphere
+    // comes from fog and surface refraction instead of painting the animal teal.
+    handle.underwater.absorption.set(0.006, 0.003, 0.0015);
+    handle.underwater.inScatterColor.set("#0b3440");
+    handle.underwater.visibility = 180;
     return handle;
   }, [gl, sun, sky]);
 
@@ -231,8 +237,8 @@ function SceneContent({
     groupRotationX: -Math.PI / 2,
     fitScaleToWidth: TILESET_METRIC_DIAMETER_UNITS,
     // Start with coarse parent tiles; the renderer streams closer detail around the chase camera.
-    errorTarget: 28,
-    maxDepth: 8,
+    errorTarget: 20,
+    maxDepth: 12,
     enableShadows: false,
   });
 
@@ -385,6 +391,7 @@ function SceneContent({
   const tmpWorldPos = useRef(new THREE.Vector3()).current;
   const scoredKayakBreachRef = useRef(new Set<string>());
   const scoredKayakBlowholeRef = useRef(new Set<string>());
+  const bellyRewardedKayaksRef = useRef(new Set<string>());
 
   useFrame((state, dtRaw) => {
     const dt = Number.isFinite(dtRaw) && dtRaw > 0 ? Math.min(dtRaw, 1 / 30) : 0;
@@ -465,6 +472,9 @@ function SceneContent({
     }
 
     controller.update(dt, elapsed, camera.position);
+    // The rig origin is body-centre; sink it by the dorsal height so a diving
+    // orca does not show a fin at the surface before its body has actually risen.
+    if (fsmOutput.mode !== "breach_air") controller.root.position.y -= 0.95;
     applyStrikeRigLayers(controller.rig, fsmOutput, null);
 
     if (teleportBeat.isActive()) {
@@ -480,6 +490,23 @@ function SceneContent({
     const orcaY = controller.root.position.y;
     const orcaZ = controller.root.position.z;
     const heading = livePose.yaw;
+
+    if (fsmOutput.mode === "blowhole_charge" || fsmOutput.mode === "blowhole_squirt") {
+      const forwardX = Math.cos(heading);
+      const forwardZ = -Math.sin(heading);
+      const target = boats
+        .filter((boat) => boat.state === "floating")
+        .map((boat) => {
+          const dx = boat.x - orcaX; const dz = boat.z - orcaZ; const distance = Math.hypot(dx, dz);
+          const facing = distance > 0 ? (dx * forwardX + dz * forwardZ) / distance : 1;
+          return { boat, distance, facing };
+        })
+        .filter((item) => item.distance < 30 && item.facing > 0.3)
+        .sort((a, b) => b.facing - a.facing || a.distance - b.distance)[0];
+      onBlowholeTarget(target ? { id: target.boat.id, x: target.boat.x, z: target.boat.z, label: `ARCADE BOAT ${target.boat.id.replace("boat-", "")}` } : null);
+    } else {
+      onBlowholeTarget(null);
+    }
 
     if (fsmOutput.mode === "breach_air") {
       const air = tickBreachAirFrame({
@@ -592,6 +619,20 @@ function SceneContent({
         mode: fsmOutput.mode,
         charge: fsmOutput.breachCharge,
       });
+    }
+
+    // Belly-up pass under a kayak: reward the player for a close inverted swim.
+    const inverted = Math.abs(Math.abs(fsmOutput.bodyRollTargetRad) - Math.PI) < 0.42;
+    for (const kayak of kayaks) {
+      const closeDistance = Math.hypot(orcaX - kayak.x, orcaZ - kayak.z);
+      if (inverted && closeDistance < 4.8 && !bellyRewardedKayaksRef.current.has(kayak.id)) {
+        bellyRewardedKayaksRef.current.add(kayak.id);
+        const scored = applyMatchScoreEvent(match, { type: "breach_over_kayak", kayakId: `belly:${kayak.id}` });
+        match = scored.match;
+        scoreResults.push(scored.result);
+        onBellyPrompt("BELLY GLIDE +500");
+        window.setTimeout(() => onBellyPrompt(null), 1800);
+      }
     }
 
     // Kayaks are reactive arcade obstacles: direct contact makes a wake and grants
@@ -827,6 +868,8 @@ export default function OrcaStrikeScene({
   const [hasStarted, setHasStarted] = useState(false);
   const [mobileInputReady, setMobileInputReady] = useState(false);
   const [pilotState, setPilotState] = useState({ x: 0, z: 0, heading: 0, depthM: spawn.depthM });
+  const [bellyPrompt, setBellyPrompt] = useState<string | null>(null);
+  const [blowholeTarget, setBlowholeTarget] = useState<{ id: string; x: number; z: number; label: string } | null>(null);
   const teleportRequestRef = useRef<{ x: number; z: number } | null>(null);
   const pingRequestedRef = useRef(false);
   const mobileSamplerRef = useRef<MobilePilotInputSampler | null>(null);
@@ -922,12 +965,18 @@ export default function OrcaStrikeScene({
           onPointerLockChange={setPointerLocked}
           onBathyFailed={() => setBathyFailed(true)}
           onPilotUpdate={setPilotState}
+          onBellyPrompt={setBellyPrompt}
+          onBlowholeTarget={setBlowholeTarget}
           teleportRequestRef={teleportRequestRef}
           pingRequestedRef={pingRequestedRef}
           isMobilePilot={isMobilePilot}
           mobileSamplerRef={mobileSamplerRef}
         />
       </Canvas>
+
+      {bellyPrompt ? <div style={{ position: "absolute", top: "18%", left: "50%", transform: "translateX(-50%)", zIndex: 20, color: "#fff5a5", fontFamily: "Impact, sans-serif", fontStyle: "italic", fontSize: "clamp(1.5rem, 4vw, 3rem)", letterSpacing: "0.06em", textShadow: "3px 3px #0a2633" }}>{bellyPrompt}</div> : null}
+      <div style={{ position: "absolute", right: 14, top: 14, zIndex: 18, color: "#dffef8", fontFamily: "ui-monospace, monospace", fontSize: 12, background: "rgba(3,22,31,.58)", padding: "8px 10px", border: "1px solid rgba(138,241,230,.34)", borderRadius: 6 }}>DEPTH&nbsp; {pilotState.depthM.toFixed(1)} m</div>
+      {blowholeTarget ? <div style={{ position: "absolute", left: "50%", top: "46%", transform: "translate(-50%,-50%)", zIndex: 19, color: "#d7fff6", fontFamily: "Impact, sans-serif", fontStyle: "italic", letterSpacing: ".08em", textShadow: "2px 2px #071d2a", textAlign: "center", pointerEvents: "none" }}><div style={{ width: 42, height: 42, margin: "0 auto 6px", border: "2px solid #a6fff1", borderRadius: "50%", boxShadow: "0 0 18px #5effdf" }} />LOCKED · {blowholeTarget.label}</div> : null}
 
       <SonarContextMap
         orcaX={pilotState.x}

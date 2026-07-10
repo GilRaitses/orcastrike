@@ -8,7 +8,6 @@ import { fogColorForSky, skyColor } from "@/app/components/scene/realism/atmosph
 import type { TilesRenderer } from "3d-tiles-renderer";
 import { applyOrcaStrikeTerrainStyle } from "./orcaStrikeTerrainStyle";
 
-const UNDERWATER_BG = new THREE.Color("#041b29");
 const UNDERWATER_FOG = new THREE.Color("#0c5264");
 
 interface SceneAtmosphereProps {
@@ -34,7 +33,9 @@ export function SceneAtmosphere({
   );
 
   const skyRef = useRef(skyHandle.object3D);
-  const underwaterFogRef = useRef(new THREE.Fog(UNDERWATER_FOG.clone(), 28, 190));
+  // Distance fog is deliberately long: shorelines need to remain readable from
+  // a submerged chase camera, while the water surface/colour provides the depth cue.
+  const underwaterFogRef = useRef(new THREE.Fog(UNDERWATER_FOG.clone(), 95, 720));
   const airFogRef = useRef(
     new THREE.Fog(
       fogColorForSky(skyColor(sunElevationDeg)),
@@ -63,10 +64,12 @@ export function SceneAtmosphere({
     const belowSurface = camera.position.y < 0.35;
     // Make the waterline readable from below: a bright gradient band at y=0
     // is handled by SeaSurface while this blue haze establishes the volume.
-    skyHandle.object3D.visible = !belowSurface;
+    // Keep the sunny sky dome present underwater too: the surface film tints it,
+    // but the player can still orient toward daylight rather than a black ceiling.
+    skyHandle.object3D.visible = true;
 
     if (belowSurface) {
-      scene.background = UNDERWATER_BG;
+      scene.background = skyColor(sunElevationDeg).clone();
       scene.fog = underwaterFogRef.current;
     } else {
       scene.background = skyColor(sunElevationDeg).clone();

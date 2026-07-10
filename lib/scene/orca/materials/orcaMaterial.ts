@@ -130,7 +130,9 @@ export function makeOrcaMaterial(opts: OrcaMaterialOptions): OrcaMaterialHandle 
         vec3 trans = exp(-uAbsorption * depthBelow);
         // Keep the animal's painted black-and-white identity legible underwater;
         // the surrounding volume carries most of the teal atmospheric colour.
-        float opticalMix = underwater * 0.42;
+        // Water volume stays in the scene/fog; keep the wet black-and-white coat
+        // essentially neutral instead of tinting it into a blue-grey animal.
+        float opticalMix = underwater * 0.035;
         gl_FragColor.rgb = gl_FragColor.rgb * mix(vec3(1.0), trans, opticalMix)
                          + uInScatter * (1.0 - trans) * opticalMix;
       }

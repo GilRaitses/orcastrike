@@ -34,11 +34,12 @@ export function applyOrcaStrikeTerrainStyle(tiles: TilesRenderer): OrcaStrikeTer
     uWaterShallow: { value: WATER_SHALLOW.clone() },
     uWaterDeep: { value: WATER_DEEP.clone() },
     uRock: { value: new THREE.Color("#5a5650") },
-    uMaxSubDepthY: { value: 140 },
-    uShoreBandY: { value: 18 },
+    // Keep a continuous shallow-to-deep seabed palette, including the y=0 shoreline.
+    uMaxSubDepthY: { value: 85 },
+    uShoreBandY: { value: 10 },
     uSlopeThreshold: { value: 0.55 },
     uSlopeSoftness: { value: 0.18 },
-    uTintStrength: { value: 0.96 },
+    uTintStrength: { value: 0.78 },
   };
 
   const createdMaterials = new Set<THREE.Material>();

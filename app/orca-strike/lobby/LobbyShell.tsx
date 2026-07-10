@@ -132,6 +132,7 @@ export default function LobbyShell({ onStart }: LobbyShellProps): JSX.Element {
         :global(.orca-strike-carousel-slide) { position: relative; width: 50%; height: 100%; flex: 0 0 50%; }
         :global(.orca-strike-carousel-canvas) { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; }
         :global(.orca-strike-carousel-copy) { position: absolute; left: clamp(1.25rem, 7vw, 8rem); bottom: 2rem; pointer-events: none; }
+        :global(.orca-strike-carousel-copy.is-resident) { left: auto; right: clamp(1.25rem, 7vw, 8rem); text-align: right; }
         :global(.orca-strike-carousel-copy p) { margin: 0 0 .25rem; font: .68rem ui-monospace,monospace; letter-spacing: .18em; color: #9aece4; }
         :global(.orca-strike-carousel-copy h2) { margin: 0; font-family: Impact, Haettenschweiler, "Arial Black", sans-serif; font-style: italic; font-size: clamp(2rem, 5vw, 4.2rem); letter-spacing: .015em; line-height: .9; color: #fff6d2; text-shadow: 3px 3px 0 #142c39, 0 0 18px rgba(90,235,217,.6); transform: skewX(-8deg); }
         :global(.orca-strike-carousel-copy span) { opacity: .75; }

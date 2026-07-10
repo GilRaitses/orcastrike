@@ -373,18 +373,31 @@ export function applyStrikeRigLayers(
       motionOverrides.headOffsetPitch ?? 0,
     );
   }
-  if (motionOverrides.pectoralL != null || motionOverrides.pectoralR != null) {
-    rig.setPectoral(motionOverrides.pectoralL ?? 0, motionOverrides.pectoralR ?? 0);
-  }
+  // Live pectoral articulation: each state keeps a distinct fin pose, with a
+  // slow visible wave while idle and a stronger tail-slap brace during a squirt.
+  const radians = (value: number) => (value * Math.PI) / 180;
+  const finWave = Math.sin(fsm.modeTimeS * (fsm.mode === "idle" ? 2.8 : 6.2)) * (fsm.mode === "idle" ? radians(18) : radians(7));
+  const slapBrace = fsm.mode === "blowhole_squirt" ? radians(24) : 0;
+  rig.setPectoral(
+    (motionOverrides.pectoralL ?? 0) + finWave + slapBrace,
+    (motionOverrides.pectoralR ?? 0) - finWave - slapBrace,
+  );
   if (fsm.mode.startsWith("blowhole")) {
     rig.setJaw(0);
   } else if (motionOverrides.jawOpen != null) {
     rig.setJaw(motionOverrides.jawOpen);
   }
-  if (sec && rigBlend.swim >= 0.5 && rig.setSecondaryFlex && rig.setCaudalFollow) {
-    if (fsm.mode !== "breach_air" && fsm.mode !== "blowhole_squirt") {
+  if (fsm.mode === "blowhole_squirt" && rig.setCaudalFollow) {
+    // One strong fluke-driven tail slap accompanies the water blast.
+    const slap = Math.sin(Math.min(1, fsm.modeTimeS / 0.45) * Math.PI) * radians(15);
+    rig.setCaudalFollow([slap * .25, slap * .45, slap * .7, slap, slap]);
+  } else if (sec && rigBlend.swim >= 0.5 && rig.setSecondaryFlex && rig.setCaudalFollow) {
+    if (fsm.mode !== "breach_air") {
       rig.setSecondaryFlex(sec.spineYaw * rigBlend.swim, sec.bankRoll * rigBlend.swim);
-      rig.setCaudalFollow(sec.caudalFollow);
+      // Amplify the DTAG-driven caudal wave in active swim so the five-joint
+      // fluke chain visibly propels from stern toward bow-facing body motion.
+      const swimBeat = Math.sin(fsm.modeTimeS * (fsm.mode === "boost" ? 9 : 5.2)) * (fsm.mode === "idle" ? radians(2) : radians(10));
+      rig.setCaudalFollow(sec.caudalFollow.map((offset, index) => offset + swimBeat * ((index + 1) / sec.caudalFollow.length)));
     }
   }
 }
