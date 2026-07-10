@@ -253,11 +253,13 @@ export function tickPilotFsm(
   ) {
     targetMode = "swim";
   } else if (
-    ctrl.blowholeTap &&
+    next.blowholeCharge > 0 &&
     !inBreachPhase &&
-    next.blowholeCharge < 1 &&
+    !inBlowholePhase &&
     depthM <= BLOWHOLE_SURFACE_DEPTH_M
   ) {
+    // Stay in the charge pose between taps. This also lets a player pause
+    // briefly while charging instead of dropping back to swim every frame.
     targetMode = "blowhole_charge";
   }
 

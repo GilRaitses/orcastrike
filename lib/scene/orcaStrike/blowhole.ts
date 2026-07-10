@@ -25,8 +25,11 @@ export function tickBlowholeCharge(
   inChargeMode: boolean,
 ): number {
   let next = charge;
+  // A tap must be able to reach the exact firing threshold. Previously the
+  // decay was applied after every tap, so a charge capped at 1 immediately
+  // became < 1 and `canFireBlowhole` could never succeed.
   if (blowholeTap) {
-    next = Math.min(1, next + BLOWHOLE_CHARGE_PER_TAP);
+    return Math.min(1, next + BLOWHOLE_CHARGE_PER_TAP);
   }
   if (inChargeMode || next > 0) {
     next = Math.max(0, next - BLOWHOLE_CHARGE_DECAY_PER_S * dt);
@@ -73,15 +76,27 @@ export function checkSquirtConeHits(
   origin: BlowholeSquirtOrigin,
   kayaks: readonly KayakHitbox[],
 ): string[] {
-  const axis = computeSquirtAxis(origin.headingRad);
   const hits: string[] = [];
   for (const kayak of kayaks) {
-    const target: Vec3 = { x: kayak.x, y: 0.25, z: kayak.z };
-    if (pointInSquirtCone({ x: origin.x, y: origin.y, z: origin.z }, axis, target)) {
-      hits.push(kayak.id);
-    }
+    // The rendered spray is pitched upward, but kayaks sit on the waterline.
+    // Testing that visual 3-D ray against y=0.25 made every normal-range shot
+    // sail over a kayak. Gameplay hit detection is intentionally evaluated in
+    // the water plane, using the same heading, angular spread, and range.
+    if (pointInSquirtWaterCone(origin, kayak)) hits.push(kayak.id);
   }
   return hits;
+}
+
+function pointInSquirtWaterCone(origin: BlowholeSquirtOrigin, kayak: KayakHitbox): boolean {
+  const dx = kayak.x - origin.x;
+  const dz = kayak.z - origin.z;
+  const range = Math.hypot(dx, dz);
+  if (range > BLOWHOLE_CONE_RANGE_M || range < 1e-3) return false;
+
+  const forwardX = Math.cos(origin.headingRad);
+  const forwardZ = -Math.sin(origin.headingRad);
+  const dot = (dx * forwardX + dz * forwardZ) / range;
+  return Math.acos(clamp(dot, -1, 1)) <= BLOWHOLE_CONE_HALF_ANGLE_RAD;
 }
 
 export function pointInSquirtCone(origin: Vec3, axis: Vec3, target: Vec3): boolean {
