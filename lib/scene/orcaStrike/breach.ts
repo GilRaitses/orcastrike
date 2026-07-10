@@ -94,6 +94,9 @@ export function isBreachLaunchGuard(input: BreachLaunchGuardInput): boolean {
   if (input.breachCharge < BREACH_MIN_LAUNCH_CHARGE) return false;
   if (input.depthM > BREACH_REENTRY_DEPTH_M + 0.5) return false;
 
+  // Arcade launch: a fully charged orca at the waterline can breach directly
+  // from Space, while a fast surface approach still launches early.
+  if (input.depthM <= 0.75) return true;
   const upwardDepthRate = -input.depthRateMps;
   const upwardVel = Math.max(input.verticalVelocityMps, upwardDepthRate);
   return upwardVel >= BREACH_SURFACE_VELOCITY_MPS;

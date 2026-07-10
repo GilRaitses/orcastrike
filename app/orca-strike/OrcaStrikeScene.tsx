@@ -30,6 +30,7 @@ import {
 } from "@/lib/scene/orcaPilot";
 import MobileControlsOverlay from "./MobileControlsOverlay";
 import { SeaSurface } from "./SeaSurface";
+import TerrainRgbFallback from "./TerrainRgbFallback";
 import SonarContextMap from "./SonarContextMap";
 import { SceneAtmosphere } from "./SceneAtmosphere";
 import {
@@ -68,10 +69,6 @@ import {
   checkDeckLanding,
   computeSquirtOrigin,
   checkSquirtConeHits,
-  createSonarScoringState,
-  scoreSonarEmit,
-  mergeSonarScoringIntoMatch,
-  createHydrophoneSonar,
   createReplayBuffer,
   createBreachCamera,
   createReplayCamera,
@@ -79,6 +76,7 @@ import {
   BREACH_CAMERA_DEFAULT_FOV_DEG,
   triggerBreachSplash,
   triggerBlowholeSpray,
+  blowholeSprayStrengthAt,
   STRIKE_MIN_DEPTH_M,
   STRIKE_MAX_DEPTH_M,
   type StrikeControlsSampler,
@@ -87,11 +85,10 @@ import {
   type MatchState,
   type ApplyScoreResult,
   type StrikeSpawnSelection,
-  type SonarScoringState,
-  type HydrophoneSonar,
   type ReplayBuffer,
   type BreachCamera,
   type ReplayCamera,
+  type BlowholeSpraySpec,
 } from "@/lib/scene/orcaStrike";
 
 const SCENE_TIME = new Date("2026-06-27T20:00:00Z");
@@ -160,6 +157,28 @@ interface SceneContentProps {
   mobileSamplerRef: React.MutableRefObject<MobilePilotInputSampler | null>;
 }
 
+function BlowholeWaterArc({ spray }: { spray: BlowholeSpraySpec }): JSX.Element | null {
+  const group = useRef<THREE.Group>(null);
+  const material = useRef<THREE.MeshBasicMaterial>(null);
+  useFrame((state) => {
+    const strength = blowholeSprayStrengthAt(spray, state.clock.elapsedTime);
+    if (group.current) group.current.visible = strength > 0.01;
+    if (material.current) material.current.opacity = strength * 0.9;
+  });
+  const direction = new THREE.Vector3(spray.direction.x, spray.direction.y, spray.direction.z);
+  const end = direction.multiplyScalar(spray.rangeM);
+  const mid = end.clone().multiplyScalar(0.52).add(new THREE.Vector3(0, 3.8, 0));
+  const curve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(), mid, end);
+  const geometry = new THREE.TubeGeometry(curve, 18, 0.09, 7, false);
+  return <group ref={group} position={[spray.origin.x, spray.origin.y, spray.origin.z]}>
+    <mesh geometry={geometry}><meshBasicMaterial ref={material} color="#d8ffff" transparent opacity={0.88} depthWrite={false} /></mesh>
+    {Array.from({ length: 16 }, (_, index) => {
+      const point = curve.getPoint(index / 15);
+      return <mesh key={index} position={point.toArray()}><sphereGeometry args={[0.06 + (index % 3) * 0.025, 6, 6]} /><meshBasicMaterial color="#b4f7ff" transparent opacity={0.72} depthWrite={false} /></mesh>;
+    })}
+  </group>;
+}
+
 function SceneContent({
   spawn,
   matchRef,
@@ -204,12 +223,16 @@ function SceneContent({
   }, [scene, env]);
 
   const orcaLightRef = useRef<THREE.PointLight>(null);
+  const orcaShadowRef = useRef<THREE.Mesh>(null);
+  const [activeSprays, setActiveSprays] = useState<BlowholeSpraySpec[]>([]);
 
   const tiles = useTilesLayer({
     url: FULL_TILESET_URL,
     groupRotationX: -Math.PI / 2,
     fitScaleToWidth: TILESET_METRIC_DIAMETER_UNITS,
-    errorTarget: 16,
+    // Start with coarse parent tiles; the renderer streams closer detail around the chase camera.
+    errorTarget: 28,
+    maxDepth: 8,
     enableShadows: false,
   });
 
@@ -235,8 +258,6 @@ function SceneContent({
   const breachCamRef = useRef<BreachCamera | null>(null);
   const replayCamRef = useRef<ReplayCamera | null>(null);
   const replayBufferRef = useRef<ReplayBuffer | null>(null);
-  const hydrophoneRef = useRef<HydrophoneSonar | null>(null);
-  const sonarScoringRef = useRef<SonarScoringState>(createSonarScoringState());
   const fsmStateRef = useRef<PilotFsmState>(createInitialPilotFsmState(spawn.depthM));
   const trickScoredRef = useRef(false);
   const stageRef = useRef<THREE.Group>(null);
@@ -321,13 +342,7 @@ function SceneContent({
     breachCamRef.current = createBreachCamera({ defaultFovDeg: 50 });
     replayCamRef.current = createReplayCamera();
     replayBufferRef.current = createReplayBuffer();
-    const hydro = createHydrophoneSonar();
-    hydrophoneRef.current = hydro;
-    void hydro.load();
-    return () => {
-      hydro.dispose();
-      hydrophoneRef.current = null;
-    };
+    return undefined;
   }, []);
 
   useEffect(() => {
@@ -339,6 +354,8 @@ function SceneContent({
   const [boats, setBoats] = useState<Boat[]>(() =>
     spawnBoats({ seed: 7, centerX: spawnXZ[0], centerZ: spawnXZ[1] }),
   );
+  const [nearBoatIds, setNearBoatIds] = useState<Set<string>>(() => new Set());
+  const boatProximityTickRef = useRef(0);
   const kayaks = useMemo(
     () => spawnKayaks({ seed: 11, centerX: spawnXZ[0], centerZ: spawnXZ[1] }),
     [spawnXZ],
@@ -379,7 +396,6 @@ function SceneContent({
     const breachCam = breachCamRef.current;
     const replayCam = replayCamRef.current;
     const replayBuffer = replayBufferRef.current;
-    const hydrophone = hydrophoneRef.current;
     const teleportBeat = teleportBeatRef.current;
     const sonarPing = sonarPingRef.current;
     if (!controller || !pilot || !chaseCam || !breachCam || !replayCam || !replayBuffer || !teleportBeat || !sonarPing) {
@@ -434,6 +450,8 @@ function SceneContent({
 
     const livePose = pilot.track.sample(0);
     if (fsmOutput.mode === "breach_air") {
+      // Keep arcade breaches spectacular but bounded; no runaway flying above water.
+      fsmStateRef.current.worldPosY = THREE.MathUtils.clamp(fsmStateRef.current.worldPosY, -0.05, 5.5);
       livePose.depthM = clampDepthM(Math.max(0, -fsmStateRef.current.worldPosY));
       controller.root.position.y = fsmStateRef.current.worldPosY;
     } else if (adapted.depthRateMps !== 0) {
@@ -536,13 +554,26 @@ function SceneContent({
           { x: orcaX, y: orcaY, z: orcaZ },
           heading,
         );
-        triggerBlowholeSpray({
+        const spray = triggerBlowholeSpray({
           origin: { x: origin.x, y: origin.y, z: origin.z },
           headingRad: origin.headingRad,
           sceneElapsedS: elapsed,
           intensity: event.charge,
         });
+        setActiveSprays((current) => [...current.filter((item) => elapsed - item.startTimeS < item.durationS), spray]);
         const squirtHits = checkSquirtConeHits(origin, kayakHitboxes);
+        const boatHits = checkSquirtConeHits(
+          origin,
+          boats.filter((boat) => boat.state === "floating").map((boat) => ({ id: boat.id, x: boat.x, z: boat.z })),
+        );
+        if (boatHits.length > 0) {
+          setBoats((current) => current.map((boat) => boatHits.includes(boat.id) ? { ...boat, state: "sinking", sinkProgress: 0 } : boat));
+          for (const boatId of boatHits) {
+            const scored = applyMatchScoreEvent(match, { type: "ram_sink_boat", boatId });
+            match = scored.match;
+            scoreResults.push(scored.result);
+          }
+        }
         for (const kayakId of squirtHits) {
           if (scoredKayakBlowholeRef.current.has(kayakId)) continue;
           scoredKayakBlowholeRef.current.add(kayakId);
@@ -563,6 +594,20 @@ function SceneContent({
       });
     }
 
+    // Kayaks are reactive arcade obstacles: direct contact makes a wake and grants
+    // a small style bonus once, while breach and blowhole remain the big scores.
+    for (const kayak of kayaks) {
+      const dx = orcaX - kayak.x;
+      const dz = orcaZ - kayak.z;
+      if (Math.hypot(dx, dz) < 2.35 && !scoredKayakBreachRef.current.has(`bump:${kayak.id}`)) {
+        scoredKayakBreachRef.current.add(`bump:${kayak.id}`);
+        triggerBreachSplash({ position: { x: kayak.x, y: 0, z: kayak.z }, kind: "entry", intensity: 0.28, sceneElapsedS: elapsed });
+        const scored = applyMatchScoreEvent(match, { type: "breach_over_kayak", kayakId: `bump:${kayak.id}` });
+        match = scored.match;
+        scoreResults.push(scored.result);
+      }
+    }
+
     const hits = checkRamCollisions(orcaX, orcaZ, boats);
     let nextBoats = boats;
     let boatsChanged = false;
@@ -579,6 +624,20 @@ function SceneContent({
         scoreResults.push(scored.result);
       }
     }
+    boatProximityTickRef.current += dt;
+    if (boatProximityTickRef.current >= 0.12) {
+      boatProximityTickRef.current = 0;
+      const nearby = new Set(
+        nextBoats
+          .filter((boat) => boat.state === "floating" && Math.hypot(boat.x - orcaX, boat.z - orcaZ) < 13)
+          .map((boat) => boat.id),
+      );
+      setNearBoatIds((previous) => {
+        if (previous.size === nearby.size && [...nearby].every((id) => previous.has(id))) return previous;
+        return nearby;
+      });
+    }
+
     if (nextBoats.some((b) => b.state !== "floating")) {
       nextBoats = nextBoats.map((b) => (b.state === "floating" ? b : advanceSink(b, dt)));
       boatsChanged = true;
@@ -620,38 +679,6 @@ function SceneContent({
       sonarPing.ping(targets);
     }
 
-    if (ctrl.sonarEmit && hydrophone && match.controlsEnabled) {
-      const candidates = [
-        ...nextBoats
-          .filter((b) => b.state !== "sunk")
-          .map((b) => ({ id: `boat:${b.id}`, x: b.x, z: b.z })),
-        ...metricPlaceTargets.map((p) => ({ id: `place:${p.id}`, x: p.x, z: p.z })),
-      ];
-      void hydrophone
-        .emitSonar({ x: orcaX, y: orcaY, z: orcaZ }, elapsed)
-        .then((emitResult) => {
-          const sonarTick = scoreSonarEmit(sonarScoringRef.current, {
-            emitResult,
-            sceneElapsedS: elapsed,
-            orcaX,
-            orcaZ,
-            candidates,
-          });
-          sonarScoringRef.current = sonarTick.state;
-          let nextMatch = matchRef.current;
-          for (const event of sonarTick.events) {
-            const scored = applyMatchScoreEvent(nextMatch, event);
-            nextMatch = scored.match;
-          }
-          nextMatch = {
-            ...nextMatch,
-            scoring: mergeSonarScoringIntoMatch(nextMatch.scoring, sonarTick.state.scoring),
-          };
-          matchRef.current = nextMatch;
-          onMatchUpdate(nextMatch);
-        });
-    }
-
     sonarPing.update(dt);
     onVisibleTargetsChange(sonarPing.getVisibleTargets());
 
@@ -669,6 +696,18 @@ function SceneContent({
     controller.root.getWorldPosition(tmpWorldPos);
     if (orcaLightRef.current) {
       orcaLightRef.current.position.set(tmpWorldPos.x, tmpWorldPos.y + 1.5, tmpWorldPos.z);
+    }
+    // A soft projected silhouette gives a direct depth cue against the seabed.
+    if (orcaShadowRef.current) {
+      const depth = Math.max(0, -orcaY);
+      const scale = THREE.MathUtils.clamp(1.2 + depth * 0.09, 1.2, 4.2);
+      const opacity = THREE.MathUtils.clamp(0.56 - depth * 0.018, 0.12, 0.56);
+      // Raise the marker just above the temporary floor and disable depth testing
+      // on its material, so it cannot vanish when streamed bathymetry overlaps it.
+      orcaShadowRef.current.position.set(orcaX, -25.6, orcaZ);
+      orcaShadowRef.current.scale.set(scale * 2.1, scale, 1);
+      const material = orcaShadowRef.current.material as THREE.MeshBasicMaterial;
+      material.opacity = opacity;
     }
 
     const cam = camera as THREE.PerspectiveCamera;
@@ -694,8 +733,9 @@ function SceneContent({
         bathyFailed={bathyFailed}
       />
 
-      <ambientLight intensity={0.72} color="#e0f2ff" />
-      <directionalLight position={[20, 60, 10]} intensity={0.55} color="#e8f6ff" />
+      {/* Underwater fill keeps streamed bathymetry legible even before high-detail tiles arrive. */}
+      <ambientLight intensity={1.15} color="#8ddbe5" />
+      <directionalLight position={[20, 60, 10]} intensity={0.9} color="#b5eff1" />
       <directionalLight
         position={sun.direction.clone().multiplyScalar(80).toArray()}
         intensity={sun.intensity * 1.2}
@@ -705,6 +745,25 @@ function SceneContent({
       <pointLight ref={orcaLightRef} intensity={2.2} distance={40} decay={2} color="#ffffff" />
 
       {tiles && !bathyFailed ? <primitive object={tiles.group} /> : null}
+
+      <TerrainRgbFallback lat={spawn.lat} lng={spawn.lng} worldX={spawnXZ[0]} worldZ={spawnXZ[1]} />
+
+      {/* Immediate seabed while the large tile world streams in; it is below sea level,
+          so it never occludes the orca, boats, or the progressively loaded terrain. */}
+      {!bathyFailed ? (
+        <>
+          <mesh rotation-x={-Math.PI / 2} position-y={-26} receiveShadow>
+            <planeGeometry args={[TILESET_METRIC_DIAMETER_UNITS, TILESET_METRIC_DIAMETER_UNITS, 48, 48]} />
+            <meshStandardMaterial color="#0b5261" roughness={0.98} metalness={0} />
+          </mesh>
+          <mesh ref={orcaShadowRef} rotation-x={-Math.PI / 2} position-y={-25.6} renderOrder={999}>
+            <circleGeometry args={[1, 32]} />
+            {/* Overlay depth marker: it stays visible while streamed terrain replaces the
+                temporary seabed, rather than disappearing behind mismatched tile depth. */}
+            <meshBasicMaterial color="#00121a" transparent opacity={0.62} depthWrite={false} depthTest={false} />
+          </mesh>
+        </>
+      ) : null}
 
       {bathyFailed ? (
         <mesh rotation-x={-Math.PI / 2} position-y={0}>
@@ -724,8 +783,24 @@ function SceneContent({
 
       {boats.map((boat) => (
         <group key={boat.id} position={[boat.x, 0, boat.z]}>
-          <BoatMarker heading={boat.heading} sinkProgress={boat.sinkProgress} />
+          <BoatMarker heading={boat.heading} sinkProgress={boat.sinkProgress} variant={Number(boat.id.replace("boat-", "")) % 3} />
+          {boat.state === "floating" && nearBoatIds.has(boat.id) ? (
+            <group position={[0, 2.1, 0]}>
+              <mesh>
+                <planeGeometry args={[2.8, 0.24]} />
+                <meshBasicMaterial color="#201d20" transparent opacity={0.9} side={THREE.DoubleSide} />
+              </mesh>
+              <mesh position={[-0.55, 0, 0.01]}>
+                <planeGeometry args={[1.7, 0.13]} />
+                <meshBasicMaterial color="#76f3a7" side={THREE.DoubleSide} />
+              </mesh>
+            </group>
+          ) : null}
         </group>
+      ))}
+
+      {activeSprays.map((spray) => (
+        <BlowholeWaterArc key={spray.id} spray={spray} />
       ))}
 
       {kayaks.map((kayak) => (
@@ -830,10 +905,12 @@ export default function OrcaStrikeScene({
       <Canvas
         camera={{ position: [10, 6, 14], fov: 50, near: 0.1, far: 800 }}
         style={{ width: "100%", height: "100%" }}
-        gl={{ antialias: true }}
+        dpr={[1, 1.5]}
+        gl={{ antialias: false, powerPreference: "high-performance" }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.22;
+          gl.toneMappingExposure = 1.05;
+          gl.outputColorSpace = THREE.SRGBColorSpace;
         }}
       >
         <SceneContent
@@ -937,8 +1014,7 @@ export default function OrcaStrikeScene({
       >
         <strong>Click to pilot the orca.</strong>
         <div style={{ marginTop: 6, opacity: 0.85 }}>
-          Q dive · E surface · W/S thrust · A/D roll · Space breach · B blowhole · O hydrophone · F
-          sonar · 1-9 warp
+          Q surface · E dive · W/S thrust · A/D roll · Arrow keys steer/depth · Space breach · B blowhole · F radar · 1-9 warp
         </div>
       </div>
 
@@ -969,11 +1045,11 @@ export default function OrcaStrikeScene({
         <strong>Orca Strike</strong>
         <div style={{ opacity: 0.75, marginTop: 4 }}>
           {isMobilePilot
-            ? "Tilt to steer. Tap Sonar to fill the map, tap a blip to warp."
-            : "Q/E depth · A/D roll · Space breach · B blowhole · O hydrophone · F sonar"}
+            ? "Tilt to steer. Tap Radar to fill the map, tap a blip to warp."
+            : "Q surface / E dive · A/D roll · arrows steer/depth · Space breach · B blowhole · F radar"}
         </div>
         <div style={{ opacity: 0.55, marginTop: 4 }}>
-          Surface at y=0 · depth {pilotState.depthM.toFixed(1)}m · {spawn.islandId}
+          {pilotState.depthM <= 0.4 ? "AT WATERLINE" : `↑ SURFACE ${pilotState.depthM.toFixed(1)}m ABOVE`} · {spawn.islandId}
         </div>
       </div>
 

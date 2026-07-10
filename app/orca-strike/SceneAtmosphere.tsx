@@ -8,8 +8,8 @@ import { fogColorForSky, skyColor } from "@/app/components/scene/realism/atmosph
 import type { TilesRenderer } from "3d-tiles-renderer";
 import { applyOrcaStrikeTerrainStyle } from "./orcaStrikeTerrainStyle";
 
-const UNDERWATER_BG = new THREE.Color("#0a2838");
-const UNDERWATER_FOG = new THREE.Color("#1e5a68");
+const UNDERWATER_BG = new THREE.Color("#041b29");
+const UNDERWATER_FOG = new THREE.Color("#0c5264");
 
 interface SceneAtmosphereProps {
   sunDirection: THREE.Vector3;
@@ -34,7 +34,7 @@ export function SceneAtmosphere({
   );
 
   const skyRef = useRef(skyHandle.object3D);
-  const underwaterFogRef = useRef(new THREE.Fog(UNDERWATER_FOG.clone(), 70, 480));
+  const underwaterFogRef = useRef(new THREE.Fog(UNDERWATER_FOG.clone(), 28, 190));
   const airFogRef = useRef(
     new THREE.Fog(
       fogColorForSky(skyColor(sunElevationDeg)),
@@ -61,6 +61,8 @@ export function SceneAtmosphere({
 
   useFrame(() => {
     const belowSurface = camera.position.y < 0.35;
+    // Make the waterline readable from below: a bright gradient band at y=0
+    // is handled by SeaSurface while this blue haze establishes the volume.
     skyHandle.object3D.visible = !belowSurface;
 
     if (belowSurface) {

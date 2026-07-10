@@ -208,6 +208,9 @@ export function useTilesLayer({
         .clone()
         .applyEuler(new THREE.Euler(group.rotation.x, group.rotation.y, group.rotation.z))
         .multiplyScalar(scale);
+      // Preserve the tileset's NAVD88 elevation datum: its local vertical axis
+      // already has sea level at zero after the z-up -> y-up rotation. Only
+      // recenter horizontally, otherwise the islands no longer meet y=0 water.
       group.position.set(-rotated.x, 0, -rotated.z);
     }
 

@@ -26,8 +26,8 @@ const IDLE_ENTER_S = 2.0;
 const BREACH_LAND_DURATION_S = 0.6;
 const BLOWHOLE_SQUIRT_DURATION_S = 0.45;
 const BREACH_CHARGE_DECAY_IDLE_S = 0.4;
-const BODY_ROLL_MAX_RAD = Math.PI / 2;
-const BODY_ROLL_SLEW_RADPS = 3.5;
+const BODY_ROLL_MAX_RAD = Math.PI * 2;
+const BODY_ROLL_SLEW_RADPS = 5.8;
 const W_DOUBLE_TAP_WINDOW_S = 0.28;
 const GRAVITY_MPS2 = -9.8;
 const BLOWHOLE_SURFACE_DEPTH_M = 1.0;
@@ -295,7 +295,9 @@ export function tickPilotFsm(
       BODY_ROLL_SLEW_RADPS * step,
     );
   } else {
-    next.bodyRollTargetRad = moveToward(next.bodyRollTargetRad, 0, BODY_ROLL_SLEW_RADPS * step);
+    // Preserve the completed roll so an orca can remain inverted below a kayak.
+    // Normalize only after release: +/-PI is a stable upside-down pose.
+    next.bodyRollTargetRad = normalizeRoll(next.bodyRollTargetRad);
   }
 
   const rigBlend = { ...MODE_RIG_BLEND[next.mode] };
@@ -385,6 +387,11 @@ export function applyStrikeRigLayers(
       rig.setCaudalFollow(sec.caudalFollow);
     }
   }
+}
+
+function normalizeRoll(angle: number): number {
+  const wrapped = ((angle + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+  return Math.abs(Math.abs(wrapped) - Math.PI) < 0.12 ? Math.sign(wrapped || 1) * Math.PI : wrapped;
 }
 
 function computeMotionOverrides(

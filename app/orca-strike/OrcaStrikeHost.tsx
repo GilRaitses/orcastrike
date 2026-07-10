@@ -14,10 +14,14 @@ const OrcaStrikeScene = dynamic(() => import("./OrcaStrikeScene"), {
         placeItems: "center",
         width: "100%",
         height: "100%",
-        color: "#9fb6c8",
+        color: "#d5f6f3",
+        background: "radial-gradient(circle at 50% 30%, #166678 0%, #072a3a 45%, #03141e 100%)",
+        fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+        letterSpacing: "0.14em",
+        textTransform: "uppercase",
       }}
     >
-      Loading Orca Strike…
+      Preparing open water…
     </div>
   ),
 });
