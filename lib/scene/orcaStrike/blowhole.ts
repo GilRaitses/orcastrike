@@ -2,8 +2,10 @@
 
 import { aabbOverlap, type KayakHitbox, type Vec3 } from "./breach";
 
-export const BLOWHOLE_CHARGE_PER_TAP = 0.22;
-export const BLOWHOLE_CHARGE_DECAY_PER_S = 0.15;
+// Four deliberate taps create a full blow. Charge only drains while the
+// player is between taps, so the final tap can reliably fire the squirt.
+export const BLOWHOLE_CHARGE_PER_TAP = 0.25;
+export const BLOWHOLE_CHARGE_DECAY_PER_S = 0.12;
 export const BLOWHOLE_FIRE_THRESHOLD = 1.0;
 export const BLOWHOLE_SQUIRT_DURATION_S = 0.45;
 export const BLOWHOLE_CONE_HALF_ANGLE_RAD = (18 * Math.PI) / 180;
@@ -24,14 +26,16 @@ export function tickBlowholeCharge(
   dt: number,
   inChargeMode: boolean,
 ): number {
-  let next = charge;
+  const safeCharge = Number.isFinite(charge) ? Math.min(1, Math.max(0, charge)) : 0;
   if (blowholeTap) {
-    next = Math.min(1, next + BLOWHOLE_CHARGE_PER_TAP);
+    // Do not decay in the same frame as a tap. Decaying after a full tap made
+    // the value fall below the firing threshold before the FSM checked it.
+    return Math.min(1, safeCharge + BLOWHOLE_CHARGE_PER_TAP);
   }
-  if (inChargeMode || next > 0) {
-    next = Math.max(0, next - BLOWHOLE_CHARGE_DECAY_PER_S * dt);
+  if (inChargeMode || safeCharge > 0) {
+    return Math.max(0, safeCharge - BLOWHOLE_CHARGE_DECAY_PER_S * Math.max(0, dt));
   }
-  return next;
+  return safeCharge;
 }
 
 export function canFireBlowhole(
@@ -73,15 +77,26 @@ export function checkSquirtConeHits(
   origin: BlowholeSquirtOrigin,
   kayaks: readonly KayakHitbox[],
 ): string[] {
-  const axis = computeSquirtAxis(origin.headingRad);
   const hits: string[] = [];
   for (const kayak of kayaks) {
-    const target: Vec3 = { x: kayak.x, y: 0.25, z: kayak.z };
-    if (pointInSquirtCone({ x: origin.x, y: origin.y, z: origin.z }, axis, target)) {
-      hits.push(kayak.id);
-    }
+    // The visible jet arcs upward, while kayaks sit at the waterline. Use a
+    // horizontal gameplay cone so an accurately aimed shot does not pass over
+    // every target due only to the visual pitch of the water arc.
+    if (pointInSquirtWaterCone(origin, kayak)) hits.push(kayak.id);
   }
   return hits;
+}
+
+function pointInSquirtWaterCone(origin: BlowholeSquirtOrigin, target: KayakHitbox): boolean {
+  const dx = target.x - origin.x;
+  const dz = target.z - origin.z;
+  const range = Math.hypot(dx, dz);
+  if (range > BLOWHOLE_CONE_RANGE_M || range < 1e-3) return false;
+
+  const forwardX = Math.cos(origin.headingRad);
+  const forwardZ = -Math.sin(origin.headingRad);
+  const dot = (dx * forwardX + dz * forwardZ) / range;
+  return Math.acos(clamp(dot, -1, 1)) <= BLOWHOLE_CONE_HALF_ANGLE_RAD;
 }
 
 export function pointInSquirtCone(origin: Vec3, axis: Vec3, target: Vec3): boolean {

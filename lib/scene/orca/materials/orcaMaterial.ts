@@ -128,8 +128,11 @@ export function makeOrcaMaterial(opts: OrcaMaterialOptions): OrcaMaterialHandle 
         float depthBelow = max(0.0, uWaterLevelY - vOrcaWorldPos.y);
         float underwater = step(vOrcaWorldPos.y, uWaterLevelY);
         vec3 trans = exp(-uAbsorption * depthBelow);
-        gl_FragColor.rgb = gl_FragColor.rgb * mix(vec3(1.0), trans, underwater)
-                         + uInScatter * (1.0 - trans) * underwater;
+        // Keep the animal's painted black-and-white identity legible underwater;
+        // the surrounding volume carries most of the teal atmospheric colour.
+        float opticalMix = underwater * 0.16;
+        gl_FragColor.rgb = gl_FragColor.rgb * mix(vec3(1.0), trans, opticalMix)
+                         + uInScatter * (1.0 - trans) * opticalMix;
       }
       #include <colorspace_fragment>`,
     );

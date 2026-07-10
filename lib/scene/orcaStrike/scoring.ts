@@ -10,7 +10,8 @@ import type {
 
 export const SCORE_TABLE: Record<ScoreEventId, number> = {
   breach_over_kayak: 500,
-  blowhole_hit_kayak: 300,
+  // Kayaker delight: a fully charged surface squirt is a high-value precision move.
+  blowhole_hit_kayak: 750,
   ram_sink_boat: 200,
   land_on_deck: 1000,
   sonar_new_blip: 50,

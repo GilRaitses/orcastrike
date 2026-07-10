@@ -53,8 +53,10 @@ export default function LobbyShell({ onStart }: LobbyShellProps): JSX.Element {
         <h1>Orca Strike</h1>
         <p className="orca-strike-lobby-sub">Solo timed round. Pick orca and spawn.</p>
       </header>
-      <div className="orca-strike-lobby-grid">
+      <div className="orca-strike-orca-stage">
         <OrcaSelect selectedId={orcaSkinId} onSelect={setOrcaSkinId} />
+      </div>
+      <div className="orca-strike-lobby-grid">
         <SpawnPicker
           islandId={islandId}
           onIslandChange={setIslandId}
@@ -89,11 +91,19 @@ export default function LobbyShell({ onStart }: LobbyShellProps): JSX.Element {
           opacity: 0.75;
           font-size: 0.95rem;
         }
+        .orca-strike-orca-stage {
+          position: relative;
+          height: min(49vh, 430px);
+          min-height: 285px;
+          overflow: hidden;
+          margin: -1.5rem -2rem 0;
+          background: radial-gradient(ellipse at 50% 50%, rgba(21, 106, 122, 0.5), transparent 62%);
+        }
         .orca-strike-lobby-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          grid-template-columns: minmax(240px, 560px);
+          justify-content: center;
           gap: 1.25rem;
-          flex: 1;
         }
         .orca-strike-lobby-footer {
           display: flex;
@@ -117,33 +127,20 @@ export default function LobbyShell({ onStart }: LobbyShellProps): JSX.Element {
           font-size: 1rem;
           font-weight: 600;
         }
-        :global(.orca-strike-skin-grid) {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        }
-        :global(.orca-strike-skin-card) {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 0.6rem 0.75rem;
-          border-radius: 8px;
-          border: 1px solid rgba(120, 200, 255, 0.25);
-          background: rgba(8, 28, 42, 0.8);
-          color: inherit;
-          cursor: pointer;
-          text-align: left;
-        }
-        :global(.orca-strike-skin-card.is-active) {
-          border-color: #3ecfff;
-          box-shadow: 0 0 0 1px #3ecfff;
-        }
-        :global(.orca-strike-skin-swatch) {
-          width: 36px;
-          height: 24px;
-          border-radius: 4px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+        :global(.orca-strike-orca-select) { height: 100%; position: relative; overflow: hidden; touch-action: pan-y; }
+        :global(.orca-strike-carousel-track) { display: flex; width: 200%; height: 100%; }
+        :global(.orca-strike-carousel-slide) { position: relative; width: 50%; height: 100%; flex: 0 0 50%; }
+        :global(.orca-strike-carousel-canvas) { position: absolute !important; inset: 0; width: 100% !important; height: 100% !important; }
+        :global(.orca-strike-carousel-copy) { position: absolute; left: clamp(1.25rem, 7vw, 8rem); bottom: 2rem; pointer-events: none; }
+        :global(.orca-strike-carousel-copy.is-resident) { left: auto; right: clamp(1.25rem, 7vw, 8rem); text-align: right; }
+        :global(.orca-strike-carousel-copy p) { margin: 0 0 .25rem; font: .68rem ui-monospace,monospace; letter-spacing: .18em; color: #9aece4; }
+        :global(.orca-strike-carousel-copy h2) { margin: 0; font-family: Impact, Haettenschweiler, "Arial Black", sans-serif; font-style: italic; font-size: clamp(2rem, 5vw, 4.2rem); letter-spacing: .015em; line-height: .9; color: #fff6d2; text-shadow: 3px 3px 0 #142c39, 0 0 18px rgba(90,235,217,.6); transform: skewX(-8deg); }
+        :global(.orca-strike-carousel-copy span) { opacity: .75; }
+        :global(.orca-strike-carousel-arrow) { position: absolute; top: 48%; z-index: 2; width: 3rem; height: 3rem; border-radius: 50%; border: 1px solid rgba(176,255,246,.5); background: rgba(4,24,33,.38); color: #dffffa; font-size: 1.4rem; cursor: pointer; }
+        :global(.orca-strike-carousel-arrow.is-left) { left: 1.25rem; } :global(.orca-strike-carousel-arrow.is-right) { right: 1.25rem; }
+        :global(.orca-strike-carousel-dots) { position: absolute; z-index: 2; bottom: 1.4rem; left: 50%; transform: translateX(-50%); display: flex; gap: .55rem; }
+        :global(.orca-strike-carousel-dots button) { width: .55rem; height: .55rem; padding: 0; border: 1px solid #c8fff8; border-radius: 50%; background: transparent; cursor: pointer; }
+        :global(.orca-strike-carousel-dots button.is-active) { background: #c8fff8; }
         :global(.orca-strike-island-tabs) {
           display: flex;
           flex-wrap: wrap;
@@ -170,7 +167,7 @@ export default function LobbyShell({ onStart }: LobbyShellProps): JSX.Element {
         }
         :global(.orca-strike-spawn-canvas) {
           width: 100%;
-          max-width: ${MAP_SIZE_PX}px;
+          max-width: 420px;
           border-radius: 8px;
           border: 1px solid rgba(120, 200, 255, 0.3);
           cursor: crosshair;

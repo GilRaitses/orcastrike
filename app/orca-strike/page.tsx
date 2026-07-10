@@ -37,7 +37,7 @@ export default function OrcaStrikeGamePage(): JSX.Element {
           onMatchUpdate={setMatch}
           onFsmOutput={setFsmOutput}
         />
-        <ScoreHud match={match} />
+        <ScoreHud match={match} fsm={fsmOutput} />
         <TrickCombo fsm={fsmOutput} />
       </>
     );
